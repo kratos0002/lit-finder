@@ -8,7 +8,8 @@ import { BookCard } from "@/components/BookCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
 import { FeaturedBooks } from "@/components/FeaturedBooks";
 import { BookOpen, RefreshCw, AlertCircle } from "lucide-react";
-import { getBooks, getBooksByCategory, searchBooks } from "@/services/bookService";
+import { getBooks, getBooksByCategory } from "@/services/bookService";
+import { getRecommendations } from "@/services/recommendationService";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -66,7 +67,16 @@ const Index = () => {
     
     try {
       console.log("Starting search for:", query);
-      const results = await searchBooks(query);
+      // Use the recommendationService instead of searchBooks directly
+      const recommendationResponse = await getRecommendations(query);
+      console.log("Recommendation response:", recommendationResponse);
+      
+      // Extract books from the recommendation response
+      const results = [
+        recommendationResponse.top_book,
+        ...recommendationResponse.recommendations
+      ].filter(Boolean);
+      
       console.log(`Search returned ${results.length} results for "${query}"`);
       
       if (results.length === 0) {
