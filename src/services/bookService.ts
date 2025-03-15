@@ -58,7 +58,25 @@ export async function searchBooks(query: string): Promise<Book[]> {
     
     // Get new recommendations
     try {
-      const recommendations = await getRecommendations(query);
+      // First try Perplexity
+      console.log('Attempting to get recommendations from Perplexity first');
+      let recommendations: Book[] = [];
+      
+      try {
+        recommendations = await getPerplexityRecommendations(query);
+        console.log(`Received ${recommendations.length} recommendations from Perplexity`);
+      } catch (perplexityError) {
+        console.error('Perplexity API failed:', perplexityError);
+        console.log('Falling back to OpenAI recommendations');
+        
+        try {
+          recommendations = await getOpenAIRecommendations(query, existingBooks);
+          console.log(`Received ${recommendations.length} recommendations from OpenAI fallback`);
+        } catch (openaiError) {
+          console.error('OpenAI API also failed:', openaiError);
+          throw new Error('Both recommendation services failed');
+        }
+      }
       
       if (recommendations.length > 0 && isAuthenticated) {
         console.log(`Storing ${recommendations.length} new recommendations as authenticated user`);
@@ -133,69 +151,89 @@ export async function getSavedBooks(userId: string | undefined): Promise<Book[]>
   });
 }
 
+async function getPerplexityRecommendations(query: string): Promise<Book[]> {
+  console.log('Calling perplexity-books function with query:', query);
+  
+  const perplexityResponse = await supabase.functions.invoke('perplexity-books', {
+    body: { query }
+  });
+  
+  if (perplexityResponse.error) {
+    console.error('Error from Perplexity function:', perplexityResponse.error);
+    throw new Error('Failed to get Perplexity recommendations');
+  }
+  
+  const perplexityBooks = perplexityResponse.data?.books || [];
+  console.log(`Received ${perplexityBooks.length} recommendations from Perplexity`);
+  
+  if (perplexityBooks.length === 0) {
+    throw new Error('No recommendations from Perplexity');
+  }
+  
+  // Process and return Perplexity books
+  return perplexityBooks.map((book: any) => ({
+    id: book.id || crypto.randomUUID(),
+    title: book.title,
+    author: book.author,
+    description: book.description,
+    summary: book.summary,
+    category: book.category,
+    matchScore: book.matchScore,
+    publicationDate: book.publicationDate || '',
+    source: book.source,
+    coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category)}`
+  }));
+}
+
+async function getOpenAIRecommendations(query: string, existingBooks: any[]): Promise<Book[]> {
+  console.log('Calling openai-recommendations function with query:', query);
+  
+  const openaiResponse = await supabase.functions.invoke('openai-recommendations', {
+    body: { 
+      query, 
+      existingBooks 
+    }
+  });
+  
+  if (openaiResponse.error) {
+    console.error('Error from OpenAI function:', openaiResponse.error);
+    throw new Error('Failed to get OpenAI recommendations');
+  }
+  
+  const openaiBooks = openaiResponse.data?.books || [];
+  console.log(`Received ${openaiBooks.length} recommendations from OpenAI`);
+  
+  if (openaiBooks.length === 0) {
+    throw new Error('No recommendations from OpenAI');
+  }
+  
+  return openaiBooks.map((book: any) => ({
+    id: book.id || crypto.randomUUID(),
+    title: book.title,
+    author: book.author,
+    description: book.description,
+    summary: book.summary,
+    category: book.category,
+    matchScore: book.matchScore,
+    publicationDate: book.publicationDate || '',
+    source: book.source,
+    coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category)}`
+  }));
+}
+
 async function getRecommendations(query: string): Promise<Book[]> {
   try {
-    console.log('Calling perplexity-books function with query:', query);
+    return await getPerplexityRecommendations(query);
+  } catch (perplexityError) {
+    console.error('Error getting Perplexity recommendations:', perplexityError);
+    console.log('Falling back to OpenAI recommendations');
     
-    const perplexityResponse = await supabase.functions.invoke('perplexity-books', {
-      body: { query }
-    });
-    
-    if (perplexityResponse.error) {
-      console.error('Error from Perplexity function:', perplexityResponse.error);
-      throw new Error('Failed to get Perplexity recommendations');
+    try {
+      return await getOpenAIRecommendations(query, []);
+    } catch (openaiError) {
+      console.error('Error getting OpenAI recommendations:', openaiError);
+      throw new Error('All recommendation services failed');
     }
-    
-    const perplexityBooks = perplexityResponse.data?.books || [];
-    console.log(`Received ${perplexityBooks.length} recommendations from Perplexity`);
-    
-    if (perplexityBooks.length === 0) {
-      console.log('No books from Perplexity, trying OpenAI');
-      const openaiResponse = await supabase.functions.invoke('openai-recommendations', {
-        body: { 
-          query, 
-          existingBooks: [] 
-        }
-      });
-      
-      if (openaiResponse.error) {
-        console.error('Error from OpenAI function:', openaiResponse.error);
-        throw new Error('Failed to get OpenAI recommendations');
-      }
-      
-      const openaiBooks = openaiResponse.data?.books || [];
-      console.log(`Received ${openaiBooks.length} recommendations from OpenAI`);
-      
-      return openaiBooks.map((book: any) => ({
-        id: book.id || crypto.randomUUID(),
-        title: book.title,
-        author: book.author,
-        description: book.description,
-        summary: book.summary,
-        category: book.category,
-        matchScore: book.matchScore,
-        publicationDate: book.publicationDate || '',
-        source: book.source,
-        coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category)}`
-      }));
-    }
-    
-    // Process and return Perplexity books
-    return perplexityBooks.map((book: any) => ({
-      id: book.id || crypto.randomUUID(),
-      title: book.title,
-      author: book.author,
-      description: book.description,
-      summary: book.summary,
-      category: book.category,
-      matchScore: book.matchScore,
-      publicationDate: book.publicationDate || '',
-      source: book.source,
-      coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category)}`
-    }));
-  } catch (error) {
-    console.error('Error getting recommendations:', error);
-    throw error;
   }
 }
 
