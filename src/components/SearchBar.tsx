@@ -38,7 +38,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search by title, author, or description..."
+          placeholder="Search for books, authors, or topics..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -60,7 +60,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         <Button 
           type="submit" 
           size="sm" 
-          className="absolute right-1 rounded-full px-4 bg-foreground text-background hover:bg-foreground/90"
+          className="absolute right-1 rounded-full px-4 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           Search
         </Button>

@@ -1,90 +1,100 @@
 
-import { Book } from "@/data/books";
+import { Book } from "@/types";
 import { useState } from "react";
-import { Star } from "lucide-react";
+import { BookOpen, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface BookCardProps {
   book: Book;
+  onSave?: (book: Book) => void;
   onClick?: () => void;
-  layout?: "grid" | "featured";
+  isSaved?: boolean;
 }
 
-export function BookCard({ book, onClick, layout = "grid" }: BookCardProps) {
+export function BookCard({ book, onSave, onClick, isSaved = false }: BookCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hover, setHover] = useState(false);
 
-  const handleImageLoad = () => {
-    setImageLoaded(true);
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onSave) onSave(book);
   };
 
-  if (layout === "featured") {
-    return (
-      <Card 
-        className="book-card relative overflow-hidden h-[500px] cursor-pointer border-0 group shadow-subtle" 
-        onClick={onClick}
-      >
-        <div className="absolute inset-0 bg-black/40 z-10"></div>
-        <div 
-          className={`absolute inset-0 bg-cover bg-center transition-all duration-500 group-hover:scale-105 ${imageLoaded ? 'image-loaded' : 'image-loading'}`}
-          style={{ backgroundImage: `url(${book.coverImage})` }}
-        >
-          <img 
-            src={book.coverImage} 
-            alt={book.title} 
-            className="opacity-0 w-full h-full object-cover"
-            onLoad={handleImageLoad}
-          />
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-6 z-20 text-white">
-          <div className="flex flex-col gap-2 animate-slide-up">
-            <div className="flex items-center gap-2 mb-2">
-              {book.categories.slice(0, 2).map(category => (
-                <Badge key={category} className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white">
-                  {category}
-                </Badge>
-              ))}
-            </div>
-            <h3 className="text-2xl font-bold">{book.title}</h3>
-            <p className="text-lg text-white/90">{book.author}</p>
-            <div className="flex items-center gap-1 mt-1">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span>{book.rating.toFixed(1)}</span>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="book-card h-full border overflow-hidden shadow-subtle">
-      <div className="relative h-[220px] overflow-hidden">
+    <Card 
+      className="book-card overflow-hidden h-full transition-all duration-300 border-border/50"
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <div className="relative h-48 overflow-hidden">
         <div 
-          className={`h-full w-full bg-cover bg-center ${imageLoaded ? 'image-loaded' : 'image-loading'}`}
+          className={cn(
+            "absolute inset-0 bg-cover bg-center transition-transform duration-500",
+            hover ? "scale-110" : "scale-100",
+            imageLoaded ? "image-loaded" : "image-loading"
+          )}
           style={{ backgroundImage: `url(${book.coverImage})` }}
         >
           <img 
             src={book.coverImage} 
             alt={book.title} 
             className="opacity-0 w-full h-full object-cover"
-            onLoad={handleImageLoad}
+            onLoad={() => setImageLoaded(true)}
           />
+        </div>
+        <div className="absolute top-2 right-2">
+          <Badge 
+            className={cn(
+              "bg-background/80 backdrop-blur-sm text-foreground font-medium",
+              book.matchScore > 90 ? "border-primary" : ""
+            )}
+          >
+            {book.matchScore}% Match
+          </Badge>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-background to-transparent">
+          <Badge variant="outline" className="bg-background/40 backdrop-blur-sm">
+            {book.category}
+          </Badge>
         </div>
       </div>
+      
       <CardContent className="p-4">
-        <div className="flex items-center gap-1 mb-2">
-          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-          <span className="text-sm">{book.rating.toFixed(1)}</span>
+        <div className="flex items-center gap-2 mb-1">
+          <Star className="w-4 h-4 text-primary fill-primary" />
+          <span className="text-sm text-muted-foreground">From {book.source}</span>
         </div>
-        <h3 className="font-bold text-lg line-clamp-1">{book.title}</h3>
-        <p className="text-muted-foreground text-sm">{book.author}</p>
-        <div className="flex gap-2 mt-3 flex-wrap">
-          {book.categories.slice(0, 2).map(category => (
-            <Badge key={category} variant="secondary" className="text-xs">
-              {category}
-            </Badge>
-          ))}
+        
+        <h3 className="font-semibold text-lg line-clamp-1">{book.title}</h3>
+        <p className="text-sm text-muted-foreground mb-2">{book.author}</p>
+        
+        <p className="text-sm line-clamp-2 text-foreground/80 mb-3">
+          {book.summary}
+        </p>
+        
+        <div className="flex justify-between items-center mt-auto pt-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-xs px-2 py-1 h-auto"
+            onClick={onClick}
+          >
+            <BookOpen className="w-3 h-3 mr-1" />
+            Details
+          </Button>
+          
+          <Button
+            variant={isSaved ? "secondary" : "outline"}
+            size="sm"
+            className="text-xs px-2 py-1 h-auto"
+            onClick={handleSave}
+          >
+            {isSaved ? "Saved" : "Save to My Books"}
+          </Button>
         </div>
       </CardContent>
     </Card>

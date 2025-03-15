@@ -5,171 +5,105 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-
-    --primary: 210 40% 96.1%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --background: 230 14% 16%; /* #2b2b2b */
+    --foreground: 0 0% 100%; /* white */
+    
+    --card: 230 14% 22%;
+    --card-foreground: 0 0% 100%;
+    
+    --popover: 230 14% 16%;
+    --popover-foreground: 0 0% 100%;
+    
+    --primary: 36 100% 50%; /* #ff9800 orange */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 285 65% 40%; /* #8e24aa purple */
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 230 14% 28%;
+    --muted-foreground: 0 0% 80%;
+    
+    --accent: 230 14% 28%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 230 14% 28%;
+    --input: 230 14% 28%;
+    --ring: 230 14% 28%;
+    
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* Sidebar specific colors */
+    --sidebar-background: 230 14% 18%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 36 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 285 65% 40%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 230 14% 30%;
+    --sidebar-ring: 230 14% 30%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border selection:bg-secondary/20 selection:text-foreground;
   }
-
+  
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight font-display;
+  html {
+    @apply scroll-smooth;
   }
 }
 
-/* Import Inter font */
-@import url('https://rsms.me/inter/inter.css');
+/* For the various card states and effects */
+@layer components {
+  .glass-card {
+    @apply backdrop-blur-sm bg-card/80 border border-white/10 shadow-lg rounded-xl transition-all;
+  }
+  
+  .interactive-card {
+    @apply hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer;
+  }
+  
+  .book-card {
+    @apply glass-card interactive-card;
+  }
 
-/* Book card hover effect */
-.book-card {
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  .stagger-animate > div {
+    @apply animate-fade-in;
+    animation-fill-mode: both;
+  }
+  
+  .stagger-animate > div:nth-child(1) { animation-delay: 0.1s; }
+  .stagger-animate > div:nth-child(2) { animation-delay: 0.2s; }
+  .stagger-animate > div:nth-child(3) { animation-delay: 0.3s; }
+  .stagger-animate > div:nth-child(4) { animation-delay: 0.4s; }
+  .stagger-animate > div:nth-child(5) { animation-delay: 0.5s; }
+  .stagger-animate > div:nth-child(6) { animation-delay: 0.6s; }
+  .stagger-animate > div:nth-child(7) { animation-delay: 0.7s; }
+  .stagger-animate > div:nth-child(8) { animation-delay: 0.8s; }
+  
+  .image-loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .image-loaded {
+    animation: none;
+  }
 }
 
-.book-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-}
-
-/* Category pill hover effect */
-.category-pill {
-  transition: all 0.3s ease;
-}
-
-.category-pill:hover {
-  transform: translateY(-2px);
-}
-
-/* Image blur-up loading effect */
-.image-loading {
-  filter: blur(10px);
-  transition: filter 0.3s ease-out;
-}
-
-.image-loaded {
-  filter: blur(0);
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
-}
-
-/* Staggered animation for lists */
-.stagger-animate > * {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: stagger-item 0.5s ease forwards;
-}
-
-.stagger-animate > *:nth-child(1) { animation-delay: 0.1s; }
-.stagger-animate > *:nth-child(2) { animation-delay: 0.2s; }
-.stagger-animate > *:nth-child(3) { animation-delay: 0.3s; }
-.stagger-animate > *:nth-child(4) { animation-delay: 0.4s; }
-.stagger-animate > *:nth-child(5) { animation-delay: 0.5s; }
-.stagger-animate > *:nth-child(6) { animation-delay: 0.6s; }
-.stagger-animate > *:nth-child(7) { animation-delay: 0.7s; }
-.stagger-animate > *:nth-child(8) { animation-delay: 0.8s; }
-
-@keyframes stagger-item {
-  to {
+@keyframes pulse {
+  0%, 100% {
     opacity: 1;
-    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.7;
   }
 }
