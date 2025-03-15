@@ -26,64 +26,92 @@ const Index = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       setIsLoading(true);
-      const books = await getBooks();
-      setAllBooks(books);
-      setFilteredBooks(books);
-      
-      // Simulate loading delay for animation purposes
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 800);
+      try {
+        const books = await getBooks();
+        setAllBooks(books);
+        setFilteredBooks(books);
+      } catch (error) {
+        console.error('Error fetching books:', error);
+        toast({
+          title: "Error loading books",
+          description: "Unable to load books. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        // Simulate loading delay for animation purposes
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 800);
+      }
     };
 
     fetchBooks();
-  }, []);
+  }, [toast]);
 
-  // Filter books based on search query or category
-  useEffect(() => {
-    const filterBooks = async () => {
-      if (searchQuery) {
-        setIsSearching(true);
-        
-        try {
-          const results = await searchBooks(searchQuery);
-          setFilteredBooks(results);
-          
-          // Refresh all books after a search to include new recommendations
-          const updatedBooks = await getBooks();
-          setAllBooks(updatedBooks);
-          
-          if (results.length === 0) {
-            toast({
-              title: "No results found",
-              description: "Try a different search term or browse categories",
-            });
-          } else if (results.length > 0) {
-            toast({
-              title: "Recommendations ready",
-              description: `Found ${results.length} books matching "${searchQuery}"`,
-            });
-          }
-        } catch (error) {
-          console.error('Search error:', error);
-          toast({
-            title: "Search error",
-            description: "Something went wrong. Please try again.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsSearching(false);
-        }
-      } else if (selectedCategory) {
-        const results = await getBooksByCategory(selectedCategory);
+  // Handle search query changes
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setFilteredBooks(allBooks);
+      setSearchQuery("");
+      return;
+    }
+    
+    setSearchQuery(query);
+    setIsSearching(true);
+    
+    try {
+      console.log("Searching for:", query);
+      const results = await searchBooks(query);
+      
+      setFilteredBooks(results);
+      
+      // Refresh all books after a search to include new recommendations
+      const updatedBooks = await getBooks();
+      setAllBooks(updatedBooks);
+      
+      if (results.length === 0) {
+        toast({
+          title: "No results found",
+          description: "Try a different search term or browse categories",
+        });
+      } else if (results.length > 0) {
+        toast({
+          title: "Recommendations ready",
+          description: `Found ${results.length} books matching "${query}"`,
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Search error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Handle category selection
+  const handleCategorySelect = async (category: string | null) => {
+    setSelectedCategory(category);
+    
+    try {
+      if (category) {
+        const results = await getBooksByCategory(category);
         setFilteredBooks(results);
       } else {
         setFilteredBooks(allBooks);
       }
-    };
-
-    filterBooks();
-  }, [selectedCategory, searchQuery, toast]);
+    } catch (error) {
+      console.error('Error fetching books by category:', error);
+      toast({
+        title: "Error",
+        description: "Unable to filter by category. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSelectBook = (book: Book) => {
     setSelectedBook(book);
@@ -118,7 +146,7 @@ const Index = () => {
           </header>
 
           <div className="mb-10 relative">
-            <SearchBar onSearch={setSearchQuery} />
+            <SearchBar onSearch={handleSearch} isSearching={isSearching} />
             {isSearching && (
               <div className="absolute right-2 top-2 animate-spin">
                 <RefreshCw className="w-5 h-5 text-primary" />
@@ -134,7 +162,7 @@ const Index = () => {
             <CategoryFilter 
               categories={categories} 
               selectedCategory={selectedCategory} 
-              onSelectCategory={setSelectedCategory} 
+              onSelectCategory={handleCategorySelect} 
             />
           </section>
 
@@ -152,7 +180,7 @@ const Index = () => {
               <button 
                 onClick={() => {
                   setSearchQuery("");
-                  setSelectedCategory(null);
+                  handleCategorySelect(null);
                 }}
                 className="mt-4 text-sm underline"
               >

@@ -7,12 +7,12 @@ import { toast } from "@/hooks/use-toast";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  isSearching?: boolean;
 }
 
-export function SearchBar({ onSearch }: SearchBarProps) {
+export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -25,10 +25,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       return;
     }
     
-    setIsSearching(true);
     try {
-      onSearch(searchQuery.trim());
       console.log("Searching for:", searchQuery.trim());
+      onSearch(searchQuery.trim());
     } catch (error) {
       toast({
         title: "Search error",
@@ -41,18 +40,11 @@ export function SearchBar({ onSearch }: SearchBarProps) {
 
   const clearSearch = () => {
     setSearchQuery("");
-    setIsSearching(false);
-    onSearch("");
     if (inputRef.current) {
       inputRef.current.focus();
     }
+    onSearch("");
   };
-
-  useEffect(() => {
-    if (searchQuery === "") {
-      onSearch("");
-    }
-  }, [searchQuery, onSearch]);
 
   return (
     <form onSubmit={handleSearch} className="relative w-full max-w-md mx-auto">
