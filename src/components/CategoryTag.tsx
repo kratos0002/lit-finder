@@ -27,6 +27,8 @@ interface CategoryTagProps {
   variant?: "default" | "outline" | "secondary" | "destructive";
   showIcon?: boolean;
   onClick?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   className?: string;
 }
 
@@ -37,6 +39,8 @@ export function CategoryTag({
   variant = "default",
   showIcon = true,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
   className,
 }: CategoryTagProps) {
   const Icon = categoryIcons[category.toLowerCase()] || DefaultIcon;
@@ -63,6 +67,8 @@ export function CategoryTag({
         className
       )}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {showIcon && (
         <Icon 
