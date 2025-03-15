@@ -51,13 +51,20 @@ export async function searchBooks(query: string): Promise<Book[]> {
 
     console.log('Getting fresh recommendations for:', query);
     
+    // Check if user is authenticated to determine if we can save results
+    const { data: session } = await supabase.auth.getSession();
+    const isAuthenticated = !!session?.session?.user;
+    console.log('User authentication status:', isAuthenticated ? 'Authenticated' : 'Not authenticated');
+    
     // Get new recommendations
     try {
       const recommendations = await getRecommendations(query);
       
-      if (recommendations.length > 0) {
-        console.log(`Storing ${recommendations.length} new recommendations`);
+      if (recommendations.length > 0 && isAuthenticated) {
+        console.log(`Storing ${recommendations.length} new recommendations as authenticated user`);
         await storeRecommendations(recommendations);
+      } else if (recommendations.length > 0) {
+        console.log('Not storing recommendations because user is not authenticated');
       }
 
       return [...existingBooks.map(formatBook), ...recommendations];
@@ -194,6 +201,13 @@ async function getRecommendations(query: string): Promise<Book[]> {
 
 async function storeRecommendations(books: Book[]): Promise<void> {
   try {
+    // Make sure we have an authenticated session before attempting to store books
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session) {
+      console.log('Cannot store recommendations - no authenticated session');
+      return;
+    }
+    
     const booksToInsert = books.map(book => ({
       id: book.id,
       title: book.title,
