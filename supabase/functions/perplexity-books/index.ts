@@ -178,56 +178,60 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
       const content = data.choices[0].message.content;
       console.log('Raw content from Perplexity:', content);
       
-      // Extract JSON from content (in case it's wrapped in text or markdown)
+      // Improved JSON extraction and parsing
       let books = [];
       try {
-        // First, try to parse the entire content as JSON
+        // First, try direct JSON parsing
         books = JSON.parse(content);
         console.log('Successfully parsed content as JSON');
       } catch (e) {
-        console.log('Failed to parse content directly as JSON, trying to extract JSON');
-        // If that fails, try to extract JSON from markdown or text
-        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || 
-                          content.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        console.log('Failed direct JSON parsing, trying alternative extraction methods');
         
-        if (jsonMatch) {
-          try {
-            const jsonText = jsonMatch[0] || jsonMatch[1];
-            console.log('Extracted JSON candidate:', jsonText);
-            books = JSON.parse(jsonText);
-            console.log('Successfully extracted and parsed JSON from content');
-          } catch (e2) {
-            console.error('Failed to parse JSON from content:', e2.message);
-            console.error('Extracted text was:', jsonMatch[0] || jsonMatch[1]);
-            throw new Error('Failed to parse book recommendations from API response');
+        // Try to find JSON within the response using regex
+        try {
+          // Look for content within code blocks
+          const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (jsonMatch && jsonMatch[1]) {
+            const jsonContent = jsonMatch[1].trim();
+            books = JSON.parse(jsonContent);
+            console.log('Extracted JSON from code block');
+          } 
+          // Look for array pattern
+          else if (content.includes('[') && content.includes(']')) {
+            const arrayMatch = content.match(/\[\s*\{[\s\S]*\}\s*\]/);
+            if (arrayMatch) {
+              books = JSON.parse(arrayMatch[0]);
+              console.log('Extracted JSON using array pattern match');
+            }
           }
-        } else if (content.includes('{') && content.includes('}')) {
-          // Try to extract JSON using a more aggressive approach
-          try {
+          // Try more aggressive approach if above methods fail
+          else if (content.includes('{') && content.includes('}')) {
             const startIdx = content.indexOf('[');
             const endIdx = content.lastIndexOf(']') + 1;
             
             if (startIdx >= 0 && endIdx > startIdx) {
               const jsonCandidate = content.substring(startIdx, endIdx);
-              console.log('JSON candidate from substring approach:', jsonCandidate);
-              books = JSON.parse(jsonCandidate);
-              console.log('Successfully extracted JSON using substring approach');
+              // Remove any markdown or text decorations
+              const cleanedJson = jsonCandidate
+                .replace(/^```json\s+/, '')
+                .replace(/\s+```$/, '');
+              books = JSON.parse(cleanedJson);
+              console.log('Extracted JSON using substring approach');
             } else {
-              throw new Error('Invalid JSON structure');
+              throw new Error('No valid JSON array found in response');
             }
-          } catch (e3) {
-            console.error('Failed to extract JSON using substring approach:', e3.message);
-            throw new Error('Failed to parse book recommendations from API response');
+          } else {
+            throw new Error('No JSON structure detected in response');
           }
-        } else {
-          console.error('No JSON pattern found in content');
-          throw new Error('Failed to parse book recommendations from API response');
+        } catch (extractError) {
+          console.error('All JSON extraction attempts failed:', extractError.message);
+          throw new Error('Failed to extract valid JSON from API response');
         }
       }
 
       if (!books || !Array.isArray(books) || books.length === 0) {
-        console.error('No books found in the response or invalid format');
-        throw new Error('Failed to parse book recommendations from API response');
+        console.error('No valid book array found in parsed content');
+        throw new Error('Invalid book format in API response');
       } 
       
       console.log(`Found ${books.length} books in Perplexity response`);

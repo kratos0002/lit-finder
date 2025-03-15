@@ -74,7 +74,10 @@ export async function searchBooks(query: string): Promise<Book[]> {
           console.log(`Received ${recommendations.length} recommendations from OpenAI fallback`);
         } catch (openaiError) {
           console.error('OpenAI API also failed:', openaiError);
-          throw new Error('Both recommendation services failed');
+          // Instead of throwing error, we'll just use an empty array
+          // We'll display the error on the search page
+          recommendations = [];
+          console.log('Both recommendation services failed, returning what we have');
         }
       }
       
@@ -82,14 +85,20 @@ export async function searchBooks(query: string): Promise<Book[]> {
         console.log(`Storing ${recommendations.length} new recommendations as authenticated user`);
         await storeRecommendations(recommendations);
       } else if (recommendations.length > 0) {
-        console.log('Not storing recommendations because user is not authenticated');
+        console.log('Not storing recommendations because user is not logged in');
+      } else {
+        console.log('No recommendations to store');
       }
 
-      return [...existingBooks.map(formatBook), ...recommendations];
+      // Combine existing and new recommendations
+      const allBooks = [...existingBooks.map(formatBook), ...recommendations];
+      console.log(`Returning total of ${allBooks.length} books (${existingBooks.length} existing + ${recommendations.length} new)`);
+      return allBooks;
     } catch (recError: any) {
       console.error('Error getting recommendations:', recError);
       // If we fail to get new recommendations, return what we have
       if (existingBooks.length > 0) {
+        console.log(`Returning ${existingBooks.length} existing books due to recommendation error`);
         return existingBooks.map(formatBook);
       }
       throw new Error(recError.message || 'Failed to get book recommendations');
@@ -167,6 +176,7 @@ async function getPerplexityRecommendations(query: string): Promise<Book[]> {
   console.log(`Received ${perplexityBooks.length} recommendations from Perplexity`);
   
   if (perplexityBooks.length === 0) {
+    console.warn('No books returned from Perplexity');
     throw new Error('No recommendations from Perplexity');
   }
   
@@ -180,8 +190,8 @@ async function getPerplexityRecommendations(query: string): Promise<Book[]> {
     category: book.category,
     matchScore: book.matchScore,
     publicationDate: book.publicationDate || '',
-    source: book.source,
-    coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category)}`
+    source: book.source || 'perplexity',
+    coverImage: book.coverImage || `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category || 'novel')}`
   }));
 }
 
@@ -204,6 +214,7 @@ async function getOpenAIRecommendations(query: string, existingBooks: any[]): Pr
   console.log(`Received ${openaiBooks.length} recommendations from OpenAI`);
   
   if (openaiBooks.length === 0) {
+    console.warn('No books returned from OpenAI');
     throw new Error('No recommendations from OpenAI');
   }
   
@@ -216,25 +227,9 @@ async function getOpenAIRecommendations(query: string, existingBooks: any[]): Pr
     category: book.category,
     matchScore: book.matchScore,
     publicationDate: book.publicationDate || '',
-    source: book.source,
-    coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category)}`
+    source: book.source || 'openai',
+    coverImage: book.coverImage || `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category || 'novel')}`
   }));
-}
-
-async function getRecommendations(query: string): Promise<Book[]> {
-  try {
-    return await getPerplexityRecommendations(query);
-  } catch (perplexityError) {
-    console.error('Error getting Perplexity recommendations:', perplexityError);
-    console.log('Falling back to OpenAI recommendations');
-    
-    try {
-      return await getOpenAIRecommendations(query, []);
-    } catch (openaiError) {
-      console.error('Error getting OpenAI recommendations:', openaiError);
-      throw new Error('All recommendation services failed');
-    }
-  }
 }
 
 async function storeRecommendations(books: Book[]): Promise<void> {
@@ -284,6 +279,6 @@ function formatBook(book: any): Book {
     category: book.category,
     matchScore: book.match_score,
     publicationDate: book.publication_date || '',
-    source: book.source as "perplexity" | "openai" | "goodreads"
+    source: book.source as "perplexity" | "openai" | "goodreads" | "fallback"
   };
 }

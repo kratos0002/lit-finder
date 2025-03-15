@@ -5,11 +5,12 @@ import { BookCard } from "@/components/BookCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
 import { Book } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { SearchX, Loader2 } from "lucide-react";
+import { SearchX, Loader2, AlertTriangle } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { searchBooks } from "@/services/bookService";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function SearchPage() {
   const [searchResults, setSearchResults] = useState<Book[]>([]);
@@ -19,6 +20,7 @@ export default function SearchPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [apiSource, setApiSource] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -91,6 +93,7 @@ export default function SearchPage() {
     
     setSearchQuery(query);
     setError(null);
+    setApiSource(null);
     setIsSearching(true);
     setSearchResults([]);
     console.log("Searching for:", query);
@@ -98,6 +101,12 @@ export default function SearchPage() {
     try {
       const results = await searchBooks(query);
       setSearchResults(results);
+      
+      // Identify the source of the results
+      if (results.length > 0) {
+        const sources = new Set(results.map(book => book.source));
+        setApiSource(Array.from(sources).join(', '));
+      }
       
       if (results.length === 0) {
         toast({
@@ -114,8 +123,8 @@ export default function SearchPage() {
       console.error("Search error:", error);
       setError(error.message || "An error occurred during search");
       toast({
-        title: "Search failed",
-        description: "An error occurred while searching. Please try again.",
+        title: "Search issue encountered",
+        description: "Using fallback results. Sign in for better results.",
         variant: "destructive",
       });
     } finally {
@@ -230,10 +239,26 @@ export default function SearchPage() {
         )}
 
         {error && !isSearching && (
-          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 mb-8">
-            <h3 className="text-lg font-medium text-destructive mb-2">Error occurred</h3>
-            <p className="text-destructive/80">{error}</p>
-            <p className="mt-2 text-sm">Using fallback recommendations instead.</p>
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Search API Issue</AlertTitle>
+            <AlertDescription>
+              {error}
+              <p className="mt-2 text-sm font-medium">
+                {searchResults.length > 0 
+                  ? `Showing ${searchResults.length} fallback results.` 
+                  : "Try a different search term or sign in for better results."}
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {apiSource && !isSearching && searchResults.length > 0 && (
+          <div className="mb-6 text-sm text-muted-foreground">
+            <p>Results provided by: {apiSource}</p>
+            {!user && (
+              <p className="mt-1">Sign in to save these recommendations for future reference.</p>
+            )}
           </div>
         )}
 
