@@ -7,8 +7,9 @@ import { CategoryFilter } from "@/components/CategoryFilter";
 import { BookCard } from "@/components/BookCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
 import { FeaturedBooks } from "@/components/FeaturedBooks";
-import { BookOpen } from "lucide-react";
+import { BookOpen, RefreshCw } from "lucide-react";
 import { getBooks, getBooksByCategory, searchBooks } from "@/services/bookService";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -18,6 +19,8 @@ const Index = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
+  const { toast } = useToast();
 
   // Fetch all books on initial load
   useEffect(() => {
@@ -40,8 +43,37 @@ const Index = () => {
   useEffect(() => {
     const filterBooks = async () => {
       if (searchQuery) {
-        const results = await searchBooks(searchQuery);
-        setFilteredBooks(results);
+        setIsSearching(true);
+        
+        try {
+          const results = await searchBooks(searchQuery);
+          setFilteredBooks(results);
+          
+          // Refresh all books after a search to include new recommendations
+          const updatedBooks = await getBooks();
+          setAllBooks(updatedBooks);
+          
+          if (results.length === 0) {
+            toast({
+              title: "No results found",
+              description: "Try a different search term or browse categories",
+            });
+          } else if (results.length > 0) {
+            toast({
+              title: "Recommendations ready",
+              description: `Found ${results.length} books matching "${searchQuery}"`,
+            });
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          toast({
+            title: "Search error",
+            description: "Something went wrong. Please try again.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsSearching(false);
+        }
       } else if (selectedCategory) {
         const results = await getBooksByCategory(selectedCategory);
         setFilteredBooks(results);
@@ -51,7 +83,7 @@ const Index = () => {
     };
 
     filterBooks();
-  }, [selectedCategory, searchQuery, allBooks]);
+  }, [selectedCategory, searchQuery, toast]);
 
   const handleSelectBook = (book: Book) => {
     setSelectedBook(book);
@@ -85,8 +117,13 @@ const Index = () => {
             </p>
           </header>
 
-          <div className="mb-10">
+          <div className="mb-10 relative">
             <SearchBar onSearch={setSearchQuery} />
+            {isSearching && (
+              <div className="absolute right-2 top-2 animate-spin">
+                <RefreshCw className="w-5 h-5 text-primary" />
+              </div>
+            )}
           </div>
 
           <section className="mb-16 animate-scale-in">
