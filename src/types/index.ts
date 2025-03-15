@@ -1,5 +1,4 @@
 
-
 export interface Book {
   id: string;
   title: string;
@@ -8,6 +7,7 @@ export interface Book {
   description: string;
   summary: string;
   category: string;
+  tags?: string[];
   matchScore: number;
   publicationDate: string;
   source: "perplexity" | "openai" | "goodreads";
@@ -39,3 +39,9 @@ export interface FeedbackMessage {
   timestamp: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  icon?: string;
+}

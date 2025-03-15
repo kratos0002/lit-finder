@@ -11,6 +11,7 @@ import SearchPage from "./pages/SearchPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
+import CategoryPage from "./pages/CategoryPage";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/" element={<HomePage />} />
             <Route path="/my-books" element={<MyBooksPage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/category/:categoryId?" element={<CategoryPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="*" element={<NotFound />} />

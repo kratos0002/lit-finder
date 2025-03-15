@@ -5,22 +5,35 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Calendar, Star, User } from "lucide-react";
 import { useState } from "react";
+import { CategoryTag } from "@/components/CategoryTag";
 
 interface BookDetailsModalProps {
   book: Book | null;
   isOpen: boolean;
   onClose: () => void;
   onSave?: (book: Book) => void;
+  onCategoryClick?: (category: string) => void;
   isSaved?: boolean;
 }
 
-export function BookDetailsModal({ book, isOpen, onClose, onSave, isSaved = false }: BookDetailsModalProps) {
+export function BookDetailsModal({ 
+  book, 
+  isOpen, 
+  onClose, 
+  onSave, 
+  onCategoryClick,
+  isSaved = false 
+}: BookDetailsModalProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   if (!book) return null;
 
   const handleSave = () => {
     if (onSave) onSave(book);
+  };
+  
+  const handleCategoryClick = () => {
+    if (onCategoryClick) onCategoryClick(book.category);
   };
 
   return (
@@ -52,9 +65,11 @@ export function BookDetailsModal({ book, isOpen, onClose, onSave, isSaved = fals
             <DialogHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <Badge variant="outline" className="mb-2">
-                    {book.category}
-                  </Badge>
+                  <CategoryTag 
+                    category={book.category} 
+                    className="mb-2"
+                    onClick={handleCategoryClick}
+                  />
                   <DialogTitle className="text-2xl font-bold mb-1">{book.title}</DialogTitle>
                   <div className="flex items-center gap-2 mb-2">
                     <User className="w-4 h-4 text-muted-foreground" />

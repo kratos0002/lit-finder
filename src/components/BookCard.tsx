@@ -6,21 +6,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CategoryTag } from "@/components/CategoryTag";
 
 interface BookCardProps {
   book: Book;
   onSave?: (book: Book) => void;
   onClick?: () => void;
+  onCategoryClick?: (category: string) => void;
   isSaved?: boolean;
 }
 
-export function BookCard({ book, onSave, onClick, isSaved = false }: BookCardProps) {
+export function BookCard({ 
+  book, 
+  onSave, 
+  onClick, 
+  onCategoryClick,
+  isSaved = false 
+}: BookCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hover, setHover] = useState(false);
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onSave) onSave(book);
+  };
+  
+  const handleCategoryClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onCategoryClick) onCategoryClick(book.category);
   };
 
   return (
@@ -57,9 +70,13 @@ export function BookCard({ book, onSave, onClick, isSaved = false }: BookCardPro
           </Badge>
         </div>
         <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-background to-transparent">
-          <Badge variant="outline" className="bg-background/40 backdrop-blur-sm">
-            {book.category}
-          </Badge>
+          <CategoryTag 
+            category={book.category} 
+            size="sm" 
+            variant="outline" 
+            className="bg-background/40 backdrop-blur-sm"
+            onClick={handleCategoryClick}
+          />
         </div>
       </div>
       
