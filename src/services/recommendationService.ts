@@ -21,63 +21,29 @@ const getUserId = async (): Promise<string> => {
   return anonymousId;
 };
 
-// Get search history from localStorage or Supabase
-const getSearchHistory = async (): Promise<string[]> => {
-  // Check if user is authenticated
-  const { data: session } = await supabase.auth.getSession();
-  
-  if (session?.session?.user?.id) {
-    // Get history from Supabase if authenticated
-    const { data, error } = await supabase
-      .from('search_history')
-      .select('search_term')
-      .eq('user_id', session.session.user.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
-      
-    if (error) {
-      console.error('Error fetching search history:', error);
-      return [];
-    }
-    
-    return data.map(item => item.search_term);
-  } else {
-    // Get history from localStorage if not authenticated
-    const historyJson = localStorage.getItem('searchHistory');
-    if (historyJson) {
-      return JSON.parse(historyJson);
-    }
-    return [];
+// Get search history from localStorage
+const getSearchHistory = (): string[] => {
+  // Get history from localStorage
+  const historyJson = localStorage.getItem('searchHistory');
+  if (historyJson) {
+    return JSON.parse(historyJson);
   }
+  return [];
 };
 
 // Save search term to history
 const saveSearchTerm = async (term: string): Promise<void> => {
-  const userId = await getUserId();
-  const { data: session } = await supabase.auth.getSession();
+  // Save to localStorage
+  let history: string[] = [];
+  const historyJson = localStorage.getItem('searchHistory');
   
-  if (session?.session?.user?.id) {
-    // Save to Supabase if authenticated
-    const { error } = await supabase
-      .from('search_history')
-      .insert({ user_id: userId, search_term: term });
-      
-    if (error) {
-      console.error('Error saving search term:', error);
-    }
-  } else {
-    // Save to localStorage if not authenticated
-    let history: string[] = [];
-    const historyJson = localStorage.getItem('searchHistory');
-    
-    if (historyJson) {
-      history = JSON.parse(historyJson);
-    }
-    
-    // Add new term at the beginning and limit to 5 items
-    history = [term, ...history.filter(item => item !== term)].slice(0, 5);
-    localStorage.setItem('searchHistory', JSON.stringify(history));
+  if (historyJson) {
+    history = JSON.parse(historyJson);
   }
+  
+  // Add new term at the beginning and limit to 5 items
+  history = [term, ...history.filter(item => item !== term)].slice(0, 5);
+  localStorage.setItem('searchHistory', JSON.stringify(history));
 };
 
 // Get recommendations from the API
@@ -90,7 +56,7 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     
     // Prepare request payload
     const userId = await getUserId();
-    const history = await getSearchHistory();
+    const history = getSearchHistory();
     
     const requestPayload: RecommendationRequest = {
       user_id: userId,
@@ -98,11 +64,10 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       history: history,
     };
     
-    // Fetch recommendations from the API
-    // For now, we'll use a mock response since the actual API endpoint isn't provided
-    // Replace this with the actual API call when you have the endpoint
+    // Here we would fetch recommendations from the API
+    // For now, we'll use a mock response since the actual API endpoint isn't ready
     
-    // Mock API call - replace with actual fetch when API is available
+    // In the future, implement actual API call:
     // const response = await fetch('/api/recommendations', {
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },
