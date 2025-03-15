@@ -7,7 +7,7 @@ import { CategoryFilter } from "@/components/CategoryFilter";
 import { BookCard } from "@/components/BookCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
 import { FeaturedBooks } from "@/components/FeaturedBooks";
-import { BookOpen, RefreshCw } from "lucide-react";
+import { BookOpen, RefreshCw, AlertCircle } from "lucide-react";
 import { getBooks, getBooksByCategory, searchBooks } from "@/services/bookService";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,6 +20,7 @@ const Index = () => {
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch all books on initial load
@@ -27,7 +28,9 @@ const Index = () => {
     const fetchBooks = async () => {
       setIsLoading(true);
       try {
+        console.log("Fetching initial books");
         const books = await getBooks();
+        console.log(`Fetched ${books.length} initial books`);
         setAllBooks(books);
         setFilteredBooks(books);
       } catch (error) {
@@ -58,10 +61,12 @@ const Index = () => {
     
     setSearchQuery(query);
     setIsSearching(true);
+    setSearchError(null);
     
     try {
-      console.log("Searching for:", query);
+      console.log("Starting search for:", query);
       const results = await searchBooks(query);
+      console.log(`Search returned ${results.length} results for "${query}"`);
       
       setFilteredBooks(results);
       
@@ -82,6 +87,7 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Search error:', error);
+      setSearchError("Failed to perform search. Please try again.");
       toast({
         title: "Search error",
         description: "Something went wrong. Please try again.",
@@ -147,46 +153,64 @@ const Index = () => {
 
           <div className="mb-10 relative">
             <SearchBar onSearch={handleSearch} isSearching={isSearching} />
-            {isSearching && (
-              <div className="absolute right-2 top-2 animate-spin">
-                <RefreshCw className="w-5 h-5 text-primary" />
-              </div>
-            )}
           </div>
 
-          <section className="mb-16 animate-scale-in">
-            <FeaturedBooks books={filteredBooks.slice(0, 3)} onSelectBook={handleSelectBook} />
-          </section>
-
-          <section className="mb-6">
-            <CategoryFilter 
-              categories={categories} 
-              selectedCategory={selectedCategory} 
-              onSelectCategory={handleCategorySelect} 
-            />
-          </section>
-
-          {filteredBooks.length > 0 ? (
-            <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 stagger-animate">
-              {filteredBooks.map((book) => (
-                <div key={book.id} onClick={() => handleSelectBook(book)}>
-                  <BookCard book={book} />
-                </div>
-              ))}
-            </section>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground">No books found matching your search.</p>
-              <button 
-                onClick={() => {
-                  setSearchQuery("");
-                  handleCategorySelect(null);
-                }}
-                className="mt-4 text-sm underline"
-              >
-                Clear filters
-              </button>
+          {isSearching && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-pulse flex flex-col items-center">
+                <RefreshCw className="w-10 h-10 text-primary animate-spin" />
+                <p className="mt-4 text-lg">Searching for recommendations...</p>
+                <p className="text-sm text-muted-foreground">This may take a moment</p>
+              </div>
             </div>
+          )}
+
+          {searchError && !isSearching && (
+            <div className="flex flex-col items-center justify-center py-8 text-destructive">
+              <AlertCircle className="w-8 h-8 mb-2" />
+              <p>{searchError}</p>
+            </div>
+          )}
+
+          {!isSearching && !searchError && (
+            <>
+              {filteredBooks.length > 0 && (
+                <section className="mb-16 animate-scale-in">
+                  <FeaturedBooks books={filteredBooks.slice(0, 3)} onSelectBook={handleSelectBook} />
+                </section>
+              )}
+
+              <section className="mb-6">
+                <CategoryFilter 
+                  categories={categories} 
+                  selectedCategory={selectedCategory} 
+                  onSelectCategory={handleCategorySelect} 
+                />
+              </section>
+
+              {filteredBooks.length > 0 ? (
+                <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 stagger-animate">
+                  {filteredBooks.map((book) => (
+                    <div key={book.id} onClick={() => handleSelectBook(book)}>
+                      <BookCard book={book} />
+                    </div>
+                  ))}
+                </section>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-lg text-muted-foreground">No books found matching your search.</p>
+                  <button 
+                    onClick={() => {
+                      setSearchQuery("");
+                      handleCategorySelect(null);
+                    }}
+                    className="mt-4 text-sm underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <BookDetailsModal 

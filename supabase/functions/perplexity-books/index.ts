@@ -14,7 +14,10 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Perplexity function called");
     const { query } = await req.json();
+    console.log("Search query:", query);
+    
     const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
 
     if (!apiKey) {
@@ -39,6 +42,7 @@ Return exactly 4 book recommendations formatted as a JSON array with these field
 title, author, description, summary, category, publicationDate, matchScore (a number between 60 and 98)
 `;
 
+    console.log("Sending request to Perplexity API");
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
@@ -67,10 +71,12 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Perplexity API error:', errorData);
-      throw new Error(`Perplexity API error: ${response.status}`);
+      console.error('Perplexity API error status:', response.status);
+      console.error('Perplexity API error response:', errorData);
+      throw new Error(`Perplexity API error: ${response.status} - ${errorData}`);
     }
 
+    console.log("Received response from Perplexity API");
     const data = await response.json();
     console.log('Perplexity response received');
     
@@ -105,7 +111,7 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
     if (books.length === 0) {
       console.error('No books found in the response');
     } else {
-      console.log(`Found ${books.length} books`);
+      console.log(`Found ${books.length} books in Perplexity response`);
     }
 
     // Add source field to each book
@@ -114,6 +120,7 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
       source: "perplexity"
     }));
 
+    console.log("Returning books from Perplexity function");
     return new Response(JSON.stringify({ books }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
