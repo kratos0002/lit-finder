@@ -10,7 +10,7 @@ export interface Book {
   tags?: string[];
   matchScore: number;
   publicationDate: string;
-  source: "perplexity" | "openai" | "goodreads";
+  source: "perplexity" | "openai" | "goodreads" | "fallback";
 }
 
 export interface Review {
