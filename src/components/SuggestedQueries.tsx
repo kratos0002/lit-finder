@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { Sparkles } from "lucide-react";
 
 interface SuggestedQueriesProps {
   onQuerySelect: (query: string) => void;
@@ -14,6 +15,12 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
     "classic Russian literature",
     "science fiction with AI themes",
     "poetry collections",
+    "historical fiction set in ancient Egypt",
+    "contemporary Japanese literature",
+    "novels about climate change",
+    "award-winning books from the last decade",
+    "Afrofuturism novels",
+    "memoirs by female journalists",
   ];
 
   const handleQueryClick = (query: string) => {
@@ -31,14 +38,15 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
         {suggestedQueries.map((query, index) => (
           <Badge 
             key={index}
-            className="px-4 py-2.5 text-sm hover:bg-primary/20 cursor-pointer hover-lift bg-card/40 backdrop-blur-sm border border-primary/10" 
+            className="px-4 py-2.5 text-sm hover:bg-primary/20 cursor-pointer hover-lift bg-card/40 backdrop-blur-sm border border-primary/10 flex items-center gap-2" 
             onClick={() => handleQueryClick(query)}
             variant="outline"
           >
+            {index < 6 && <Sparkles className="h-3 w-3 text-amber-500" />}
             {query}
           </Badge>
         ))}

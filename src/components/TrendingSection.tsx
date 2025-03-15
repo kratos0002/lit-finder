@@ -3,9 +3,8 @@ import React, { useState } from "react";
 import { TrendingCard, TrendingItem } from "./TrendingCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Scroll } from "lucide-react";
+import { RefreshCw, Scroll, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { mockTrendingItems } from "@/data/mockTrendingData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,40 +17,35 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
   const [savedItems, setSavedItems] = useState<TrendingItem[]>([]);
   const { toast } = useToast();
   
-  // For now, we'll use mock data until the API is updated
-  const { data: trendingItems, isLoading, error, refetch } = useQuery({
+  // Use React Query to fetch real trending items
+  const { 
+    data: trendingData, 
+    isLoading, 
+    error, 
+    refetch,
+    isRefetching
+  } = useQuery({
     queryKey: ['trending', searchHistory],
     queryFn: async () => {
-      // This would typically call the API with search history and feedback
-      // But for now, we'll use mock data and filter based on the history
       console.log('Fetching trending items with history:', searchHistory);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await supabase.functions.invoke('trending-content', {
+        body: { searchHistory }
+      });
       
-      // If we have search history, use it to "personalize" trending items
-      if (searchHistory && searchHistory.length > 0) {
-        // Simple matching - in the real API this would be more sophisticated
-        return mockTrendingItems.sort((a, b) => {
-          const aScore = searchHistory.some(term => 
-            a.title.toLowerCase().includes(term.toLowerCase()) || 
-            a.summary.toLowerCase().includes(term.toLowerCase())
-          ) ? 1 : 0;
-          
-          const bScore = searchHistory.some(term => 
-            b.title.toLowerCase().includes(term.toLowerCase()) || 
-            b.summary.toLowerCase().includes(term.toLowerCase())
-          ) ? 1 : 0;
-          
-          return bScore - aScore;
-        });
+      if (response.error) {
+        console.error('Error from trending-content function:', response.error);
+        throw new Error('Failed to get trending content');
       }
       
-      return mockTrendingItems;
+      return response.data;
     },
-    initialData: mockTrendingItems,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    refetchOnWindowFocus: false,
   });
 
+  const trendingItems = trendingData?.items || [];
+  
   // Extract unique categories from trending items
   const categories = ['All', ...new Set(trendingItems?.map(item => item.category) || [])];
   
@@ -62,7 +56,13 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
 
   const handleRefresh = async () => {
     try {
+      toast({
+        title: "Updating scrolls",
+        description: "Fetching the latest scrolls from around the literary world...",
+      });
+      
       await refetch();
+      
       toast({
         title: "Scrolls updated",
         description: "The latest scrolls have been delivered to Alexandria."
@@ -130,33 +130,63 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
           size="sm" 
           className="gap-2 bg-[#8e24aa] hover:bg-[#7b1fa2] text-white border-none"
           onClick={handleRefresh}
-          disabled={isLoading}
+          disabled={isLoading || isRefetching}
         >
-          {isLoading ? (
-            <>Loading<RefreshCw className="w-4 h-4 animate-spin" /></>
+          {isLoading || isRefetching ? (
+            <>Updating<RefreshCw className="w-4 h-4 animate-spin" /></>
           ) : (
             <>Update Scrolls<RefreshCw className="w-4 h-4" /></>
           )}
         </Button>
       </div>
       
-      {/* Category filters */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {categories.map(category => (
-          <Badge 
-            key={category}
-            variant={selectedCategory === category ? "default" : "outline"}
-            className="cursor-pointer font-serif"
-            onClick={() => setSelectedCategory(category === 'All' ? null : category)}
-          >
-            {category}
-          </Badge>
-        ))}
-      </div>
+      {/* Category filters - only show if we have items */}
+      {trendingItems.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {categories.map(category => (
+            <Badge 
+              key={category}
+              variant={selectedCategory === category ? "default" : "outline"}
+              className="cursor-pointer font-serif"
+              onClick={() => setSelectedCategory(category === 'All' ? null : category)}
+            >
+              {category}
+            </Badge>
+          ))}
+        </div>
+      )}
       
       {error ? (
-        <div className="p-4 bg-destructive/10 border border-destructive rounded-lg mb-8">
-          <p className="text-destructive">Failed to unfurl scrolls. Please try again later.</p>
+        <div className="p-6 bg-card/40 backdrop-blur-sm border border-destructive/20 rounded-lg flex flex-col items-center justify-center text-center">
+          <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+          <h3 className="text-lg font-serif mb-1">Failed to unfurl scrolls</h3>
+          <p className="text-sm text-muted-foreground mb-4">Our librarians couldn't retrieve the latest scrolls.</p>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRefresh}
+          >
+            Try Again
+          </Button>
+        </div>
+      ) : isLoading && !trendingItems.length ? (
+        <div className="p-10 bg-card/40 backdrop-blur-sm border border-primary/20 rounded-lg flex flex-col items-center justify-center text-center">
+          <RefreshCw className="h-10 w-10 text-primary/70 animate-spin mb-3" />
+          <h3 className="text-lg font-serif mb-1">Unfurling scrolls</h3>
+          <p className="text-sm text-muted-foreground">Our librarians are collecting the latest literary news...</p>
+        </div>
+      ) : trendingItems.length === 0 ? (
+        <div className="p-8 bg-card/40 backdrop-blur-sm border border-primary/20 rounded-lg flex flex-col items-center justify-center text-center">
+          <Scroll className="h-10 w-10 text-primary/70 mb-3" />
+          <h3 className="text-lg font-serif mb-1">No scrolls available</h3>
+          <p className="text-sm text-muted-foreground mb-4">Try updating or changing your search terms.</p>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleRefresh}
+          >
+            Update Scrolls
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
