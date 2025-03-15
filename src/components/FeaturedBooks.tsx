@@ -1,5 +1,5 @@
 
-import { Book } from "@/data/books";
+import { Book } from "@/types";
 import { BookCard } from "./BookCard";
 import { useEffect, useState } from "react";
 
@@ -30,7 +30,6 @@ export function FeaturedBooks({ books, onSelectBook }: FeaturedBooksProps) {
           <div key={book.id} className="min-w-full h-full">
             <BookCard 
               book={book} 
-              layout="featured" 
               onClick={() => onSelectBook(book)}
             />
           </div>

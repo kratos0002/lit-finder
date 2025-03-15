@@ -5,7 +5,7 @@ import { BookCard } from "@/components/BookCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
 import { Book } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpenX } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 export default function MyBooksPage() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -61,7 +61,7 @@ export default function MyBooksPage() {
           </div>
         ) : (
           <div className="text-center py-16 px-4">
-            <BookOpenX className="w-16 h-16 mx-auto text-muted-foreground opacity-30 mb-4" />
+            <BookOpen className="w-16 h-16 mx-auto text-muted-foreground opacity-30 mb-4" />
             <h2 className="text-xl font-semibold mb-2">No saved books yet</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
               Start exploring recommendations and save books to your personal collection.
