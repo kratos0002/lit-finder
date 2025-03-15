@@ -29,6 +29,11 @@ export function SearchBar({
     }
   }, [initialQuery]);
 
+  // Update local state when initialQuery changes
+  useEffect(() => {
+    setSearchQuery(initialQuery);
+  }, [initialQuery]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     

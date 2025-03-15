@@ -16,6 +16,11 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
     "poetry collections",
   ];
 
+  const handleQueryClick = (query: string) => {
+    console.log("Selected suggested query:", query);
+    onQuerySelect(query);
+  };
+
   return (
     <section className="py-12 flex flex-col items-center justify-center text-center">
       <div className="mb-8 text-muted-foreground">
@@ -28,7 +33,8 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
           <Badge 
             key={index}
             className="px-4 py-2 text-sm hover:bg-primary/20 cursor-pointer" 
-            onClick={() => onQuerySelect(query)}
+            onClick={() => handleQueryClick(query)}
+            variant="outline"
           >
             {query}
           </Badge>

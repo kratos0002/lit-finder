@@ -2,6 +2,8 @@
 import { Book, RecommendationRequest, RecommendationResponse, Review, SocialPost } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
+import { searchBooks } from "@/services/bookService";
+import { mockReviews, mockSocialPosts } from "@/data/mockData";
 
 // Generate or retrieve a user ID
 const getUserId = async (): Promise<string> => {
@@ -51,6 +53,10 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
   try {
     console.log('Getting recommendations for:', searchTerm);
     
+    if (!searchTerm || searchTerm.trim() === '') {
+      throw new Error('Search term is empty');
+    }
+    
     // Save search term to history
     await saveSearchTerm(searchTerm);
     
@@ -63,6 +69,8 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       search_term: searchTerm,
       history: history,
     };
+    
+    console.log('Request payload:', requestPayload);
     
     // Here we would fetch recommendations from the API
     // For now, we'll use a mock response since the actual API endpoint isn't ready
@@ -90,13 +98,13 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
 };
 
 // Temporary mock function to simulate the new API using existing search
-import { searchBooks } from "@/services/bookService";
-import { mockReviews, mockSocialPosts } from "@/data/mockData";
-
 async function getMockRecommendations(searchTerm: string): Promise<RecommendationResponse> {
   try {
+    console.log('Getting mock recommendations for:', searchTerm);
+    
     // Use the existing search function
     const books = await searchBooks(searchTerm);
+    console.log('Found books:', books);
     
     // Sort by match score
     books.sort((a, b) => b.matchScore - a.matchScore);
@@ -143,6 +151,7 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
       recommendations: books.slice(1, 11) // Take up to 10 additional recommendations
     };
     
+    console.log('Mock response prepared:', response);
     return response;
   } catch (error) {
     console.error('Error in mock recommendations:', error);

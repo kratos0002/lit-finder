@@ -30,9 +30,13 @@ export default function HomePage() {
     refetch
   } = useQuery({
     queryKey: ['recommendations', searchQuery],
-    queryFn: () => searchQuery ? getRecommendations(searchQuery) : null,
-    enabled: false, // Don't fetch on component mount
+    queryFn: () => getRecommendations(searchQuery),
+    enabled: searchQuery !== "", // Enable the query when search query is not empty
   });
+
+  console.log("Current search query:", searchQuery);
+  console.log("Is loading:", isLoading);
+  console.log("Recommendations:", recommendations);
 
   // Load search history from localStorage on component mount
   useEffect(() => {
@@ -57,13 +61,14 @@ export default function HomePage() {
   }, [recommendations, searchQuery]);
 
   const handleGetRecommendations = async (query: string) => {
+    if (!query.trim()) return;
+    
+    console.log("Getting recommendations for:", query);
     setSearchQuery(query);
-    refetch();
   };
 
   const handleHistoryTagClick = (query: string) => {
     setSearchQuery(query);
-    refetch();
   };
 
   const handleBookClick = (book: Book) => {
@@ -184,7 +189,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {!recommendations && !isLoading && (
+        {!recommendations && !isLoading && !searchQuery && (
           <SuggestedQueries onQuerySelect={handleGetRecommendations} />
         )}
       </div>
