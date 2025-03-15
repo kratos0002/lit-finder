@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import MyBooksPage from "./pages/MyBooksPage";
 import SearchPage from "./pages/SearchPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
 // Create a client
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/my-books" element={<MyBooksPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/auth" element={<AuthPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

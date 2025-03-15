@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { BookCard } from "@/components/BookCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { SearchX, Loader2 } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { searchBooks } from "@/services/bookService";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SearchPage() {
   const [searchResults, setSearchResults] = useState<Book[]>([]);
@@ -18,6 +20,71 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Load saved books from Supabase when user is authenticated
+  useEffect(() => {
+    const loadSavedBooks = async () => {
+      if (!user) {
+        // If no user is logged in, try to load from localStorage as fallback
+        const storedBooks = localStorage.getItem('savedBooks');
+        if (storedBooks) {
+          setSavedBooks(JSON.parse(storedBooks));
+        }
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('saved_books')
+          .select('book_id')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const bookIds = data.map(item => item.book_id);
+          
+          // Fetch the actual book details
+          const { data: booksData, error: booksError } = await supabase
+            .from('books')
+            .select('*')
+            .in('id', bookIds);
+            
+          if (booksError) throw booksError;
+          
+          if (booksData) {
+            // Transform Supabase book format to app Book format
+            const books: Book[] = booksData.map(book => ({
+              id: book.id,
+              title: book.title,
+              author: book.author,
+              coverImage: book.cover_image || '',
+              description: book.description,
+              summary: book.summary,
+              category: book.category,
+              matchScore: book.match_score,
+              publicationDate: book.publication_date || '',
+              source: book.source as any
+            }));
+            
+            setSavedBooks(books);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading saved books:", error);
+      }
+    };
+
+    loadSavedBooks();
+  }, [user]);
+
+  // Save to localStorage as fallback when user is not authenticated
+  useEffect(() => {
+    if (!user) {
+      localStorage.setItem('savedBooks', JSON.stringify(savedBooks));
+    }
+  }, [savedBooks, user]);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) return;
@@ -61,7 +128,7 @@ export default function SearchPage() {
     setIsModalOpen(true);
   };
 
-  const handleSaveBook = (book: Book) => {
+  const handleSaveBook = async (book: Book) => {
     if (savedBooks.some(savedBook => savedBook.id === book.id)) {
       toast({
         title: "Already saved",
@@ -70,11 +137,73 @@ export default function SearchPage() {
       return;
     }
 
-    setSavedBooks([...savedBooks, book]);
-    toast({
-      title: "Book saved",
-      description: `"${book.title}" has been added to your books.`,
-    });
+    try {
+      if (user) {
+        // First, ensure the book exists in the books table
+        const { data: existingBook, error: checkError } = await supabase
+          .from('books')
+          .select('id')
+          .eq('id', book.id)
+          .single();
+          
+        if (checkError && checkError.code !== 'PGRST116') {
+          // If error is not "no rows returned", it's a real error
+          throw checkError;
+        }
+        
+        // If book doesn't exist in the database, insert it
+        if (!existingBook) {
+          const { error: insertBookError } = await supabase
+            .from('books')
+            .insert({
+              id: book.id,
+              title: book.title,
+              author: book.author,
+              cover_image: book.coverImage,
+              description: book.description,
+              summary: book.summary,
+              category: book.category,
+              match_score: book.matchScore,
+              publication_date: book.publicationDate,
+              source: book.source
+            });
+            
+          if (insertBookError) throw insertBookError;
+        }
+        
+        // Now save the book to the user's saved books
+        const { error: saveError } = await supabase
+          .from('saved_books')
+          .insert({
+            book_id: book.id,
+            user_id: user.id
+          });
+          
+        if (saveError) throw saveError;
+        
+        setSavedBooks([...savedBooks, book]);
+        
+        toast({
+          title: "Book saved",
+          description: `"${book.title}" has been added to your books.`,
+        });
+      } else {
+        // Fallback to localStorage if user is not authenticated
+        setSavedBooks([...savedBooks, book]);
+        
+        toast({
+          title: "Book saved locally",
+          description: `"${book.title}" has been saved. Sign in to sync across devices.`,
+        });
+      }
+    } catch (error: any) {
+      console.error("Error saving book:", error);
+      toast({
+        title: "Error saving book",
+        description: error.message || "An error occurred while saving the book.",
+        variant: "destructive",
+      });
+    }
   };
 
   const isBookSaved = (book: Book) => {

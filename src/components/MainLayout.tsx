@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
+import { UserProfile } from "@/components/UserProfile";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -59,7 +60,12 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
             </Button>
           </div>
 
-          <nav className="flex flex-1 flex-col mt-10">
+          {/* User Profile */}
+          <div className="mt-2">
+            <UserProfile />
+          </div>
+
+          <nav className="flex flex-1 flex-col mt-6">
             <ul className="flex flex-1 flex-col gap-y-2">
               {navigation.map((item) => (
                 <li key={item.name}>
