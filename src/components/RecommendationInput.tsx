@@ -32,6 +32,13 @@ export function RecommendationInput({
     
     if (!query.trim()) return;
     
+    // Update search history in localStorage
+    if (!searchHistory.includes(query.trim())) {
+      const updatedHistory = [query.trim(), ...searchHistory].slice(0, 10);
+      localStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
+      setSearchHistory(updatedHistory);
+    }
+    
     onSubmit(query.trim());
   };
 

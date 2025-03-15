@@ -1,19 +1,18 @@
 
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
-import { BookCard } from "@/components/BookCard";
-import { InsightCard } from "@/components/InsightCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
 import { Book, RecommendationResponse } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecommendationInput } from "@/components/RecommendationInput";
 import { getRecommendations } from "@/services/recommendationService";
+import { Loader2, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Loader2, History } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { TopPicksSection } from "@/components/TopPicksSection";
+import { RecommendationsGrid } from "@/components/RecommendationsGrid";
+import { SuggestedQueries } from "@/components/SuggestedQueries";
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,6 +45,16 @@ export default function HomePage() {
     
     loadSearchHistory();
   }, []);
+
+  // Save or update search history
+  useEffect(() => {
+    if (searchQuery && recommendations) {
+      // Only add to history if the search returned results
+      const updatedHistory = [searchQuery, ...searchHistory.filter(term => term !== searchQuery)].slice(0, 10);
+      setSearchHistory(updatedHistory);
+      localStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
+    }
+  }, [recommendations, searchQuery]);
 
   const handleGetRecommendations = async (query: string) => {
     setSearchQuery(query);
@@ -155,126 +164,28 @@ export default function HomePage() {
 
         {recommendations && !isLoading && (
           <div className="animate-fade-in">
-            <section className="mb-10">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold">Top Picks for You</h2>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Top Book Card */}
-                <div className="bg-[#3a3a3a] rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl">
-                  <BookCard 
-                    book={recommendations.top_book}
-                    onClick={() => handleBookClick(recommendations.top_book)}
-                    onSave={handleSaveBook}
-                    isSaved={isBookSaved(recommendations.top_book)}
-                  />
-                </div>
-                
-                {/* Top Review Card */}
-                <div className="bg-[#3a3a3a] rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl" style={{ animationDelay: '0.1s' }}>
-                  <InsightCard item={recommendations.top_review} type="review" />
-                </div>
-                
-                {/* Top Social Post Card */}
-                <div className="bg-[#3a3a3a] rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl" style={{ animationDelay: '0.2s' }}>
-                  <InsightCard item={recommendations.top_social} type="social" />
-                </div>
-              </div>
-            </section>
+            {/* Top Picks Section - showing the top book, review, and social post */}
+            <TopPicksSection 
+              topBook={recommendations.top_book}
+              topReview={recommendations.top_review}
+              topSocial={recommendations.top_social}
+              onBookClick={handleBookClick}
+              onSaveBook={handleSaveBook}
+              isBookSaved={isBookSaved}
+            />
 
-            <section className="mb-12">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold">More Recommendations</h2>
-                <Button variant="outline" size="sm" className="gap-1">
-                  See All <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              <Tabs defaultValue="all" className="mb-6">
-                <TabsList>
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  {/* Generate tabs for unique categories */}
-                  {[...new Set(recommendations.recommendations.map(book => book.category))].map(category => (
-                    <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-                  ))}
-                </TabsList>
-                
-                <TabsContent value="all" className="pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {recommendations.recommendations.map((book, index) => (
-                      <div 
-                        key={book.id} 
-                        className="bg-[#3a3a3a] rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl"
-                        style={{ animationDelay: `${0.1 * (index + 1)}s` }}
-                      >
-                        <BookCard 
-                          book={book} 
-                          onClick={() => handleBookClick(book)}
-                          onSave={handleSaveBook}
-                          isSaved={isBookSaved(book)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                {/* Content for each category tab */}
-                {[...new Set(recommendations.recommendations.map(book => book.category))].map(category => (
-                  <TabsContent key={category} value={category} className="pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                      {recommendations.recommendations
-                        .filter(book => book.category === category)
-                        .map((book, index) => (
-                          <div 
-                            key={book.id} 
-                            className="bg-[#3a3a3a] rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl"
-                            style={{ animationDelay: `${0.1 * (index + 1)}s` }}
-                          >
-                            <BookCard 
-                              book={book} 
-                              onClick={() => handleBookClick(book)}
-                              onSave={handleSaveBook}
-                              isSaved={isBookSaved(book)}
-                            />
-                          </div>
-                        ))}
-                    </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </section>
+            {/* More Recommendations Section - showing filtered recommendations */}
+            <RecommendationsGrid 
+              recommendations={recommendations.recommendations}
+              onBookClick={handleBookClick}
+              onSaveBook={handleSaveBook}
+              isBookSaved={isBookSaved}
+            />
           </div>
         )}
 
         {!recommendations && !isLoading && (
-          <section className="py-12 flex flex-col items-center justify-center text-center">
-            <div className="mb-8 text-muted-foreground">
-              <p className="text-xl mb-2">Enter a literary work you enjoy to get started</p>
-              <p>For example: "science fiction like three body problem" or "mystery novels similar to Sherlock Holmes"</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-              <Badge className="px-4 py-2 text-sm hover:bg-primary/20 cursor-pointer" onClick={() => setSearchQuery("dystopian fiction like 1984")}>
-                Dystopian fiction like 1984
-              </Badge>
-              <Badge className="px-4 py-2 text-sm hover:bg-primary/20 cursor-pointer" onClick={() => setSearchQuery("philosophical novels")}>
-                Philosophical novels
-              </Badge>
-              <Badge className="px-4 py-2 text-sm hover:bg-primary/20 cursor-pointer" onClick={() => setSearchQuery("magical realism like Gabriel García Márquez")}>
-                Magical realism
-              </Badge>
-              <Badge className="px-4 py-2 text-sm hover:bg-primary/20 cursor-pointer" onClick={() => setSearchQuery("classic Russian literature")}>
-                Classic Russian literature
-              </Badge>
-              <Badge className="px-4 py-2 text-sm hover:bg-primary/20 cursor-pointer" onClick={() => setSearchQuery("science fiction with AI themes")}>
-                Science fiction with AI themes
-              </Badge>
-              <Badge className="px-4 py-2 text-sm hover:bg-primary/20 cursor-pointer" onClick={() => setSearchQuery("poetry collections")}>
-                Poetry collections
-              </Badge>
-            </div>
-          </section>
+          <SuggestedQueries onQuerySelect={handleGetRecommendations} />
         )}
       </div>
 
