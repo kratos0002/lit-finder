@@ -3,50 +3,49 @@ import { useState } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { BookCard } from "@/components/BookCard";
 import { BookDetailsModal } from "@/components/BookDetailsModal";
-import { mockBooks } from "@/data/mockData";
 import { Book } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { SearchX } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { SearchX, Loader2 } from "lucide-react";
+import { SearchBar } from "@/components/SearchBar";
+import { searchBooks } from "@/services/bookService";
 
 export default function SearchPage() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  // In a real app, we would fetch the saved books from a backend
-  // For now, we'll use a local state to simulate this
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
     
+    setSearchQuery(query);
     setIsSearching(true);
+    console.log("Searching for:", query);
     
-    // Simulate API call
-    setTimeout(() => {
-      // Filter books that match the search query (case insensitive)
-      const results = mockBooks.filter(book => 
-        book.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        book.summary.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      
+    try {
+      const results = await searchBooks(query);
       setSearchResults(results);
-      setIsSearching(false);
       
       if (results.length === 0) {
         toast({
           title: "No results found",
-          description: `No books found matching "${searchQuery}".`,
+          description: `No books found matching "${query}".`,
         });
       }
-    }, 1000); // Simulate a delay
+    } catch (error) {
+      console.error("Search error:", error);
+      toast({
+        title: "Search failed",
+        description: "An error occurred while searching. Please try again.",
+        variant: "destructive",
+      });
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleBookClick = (book: Book) => {
@@ -83,25 +82,17 @@ export default function SearchPage() {
             Search for books, authors, topics, or themes to get personalized recommendations.
           </p>
           
-          <form onSubmit={handleSearch} className="flex gap-2 max-w-xl">
-            <Input
-              type="text"
-              placeholder="Enter a book title, author, topic, or theme..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
-            <Button 
-              type="submit" 
-              disabled={isSearching}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {isSearching ? "Searching..." : "Search"}
-            </Button>
-          </form>
+          <SearchBar onSearch={handleSearch} isSearching={isSearching} />
         </section>
 
-        {searchResults.length > 0 ? (
+        {isSearching && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Searching for recommendations...</p>
+          </div>
+        )}
+
+        {searchResults.length > 0 && !isSearching ? (
           <div>
             <h2 className="text-xl font-semibold mb-4">Search Results</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

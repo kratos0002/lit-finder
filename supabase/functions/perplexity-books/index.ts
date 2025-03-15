@@ -102,50 +102,70 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || 
                         content.match(/\[\s*\{[\s\S]*\}\s*\]/);
       
-      if (jsonMatch && jsonMatch[1]) {
+      if (jsonMatch) {
         try {
-          const jsonText = jsonMatch[1].trim();
-          books = JSON.parse(jsonMatch[1]);
+          const jsonText = jsonMatch[0] || jsonMatch[1];
+          console.log('Extracted JSON candidate:', jsonText);
+          books = JSON.parse(jsonText);
           console.log('Successfully extracted and parsed JSON from content');
         } catch (e2) {
           console.error('Failed to parse JSON from content:', e2.message);
-          console.error('Extracted text was:', jsonMatch[1]);
-          books = [];
+          console.error('Extracted text was:', jsonMatch[0] || jsonMatch[1]);
+          
+          // Last-ditch effort - try to fix common JSON formatting issues
+          try {
+            const fixedJson = (jsonMatch[0] || jsonMatch[1])
+              .replace(/(\w+):/g, '"$1":')  // Add quotes to keys
+              .replace(/'/g, '"');          // Replace single quotes with double quotes
+            
+            books = JSON.parse(fixedJson);
+            console.log('Successfully parsed fixed JSON');
+          } catch (e3) {
+            console.error('Failed to parse fixed JSON:', e3.message);
+            throw new Error('Failed to parse book recommendations from API response');
+          }
         }
       } else if (content.includes('{') && content.includes('}')) {
         // Try to extract JSON using a more aggressive approach
         try {
-          const jsonCandidate = content.substring(
-            content.indexOf('['), 
-            content.lastIndexOf(']') + 1
-          );
-          books = JSON.parse(jsonCandidate);
-          console.log('Successfully extracted JSON using substring approach');
+          const startIdx = content.indexOf('[');
+          const endIdx = content.lastIndexOf(']') + 1;
+          
+          if (startIdx >= 0 && endIdx > startIdx) {
+            const jsonCandidate = content.substring(startIdx, endIdx);
+            console.log('JSON candidate from substring approach:', jsonCandidate);
+            books = JSON.parse(jsonCandidate);
+            console.log('Successfully extracted JSON using substring approach');
+          } else {
+            throw new Error('Invalid JSON structure');
+          }
         } catch (e3) {
           console.error('Failed to extract JSON using substring approach:', e3.message);
-          books = [];
+          throw new Error('Failed to parse book recommendations from API response');
         }
       } else {
         console.error('No JSON pattern found in content');
+        throw new Error('Failed to parse book recommendations from API response');
       }
     }
 
-    if (books.length === 0) {
-      console.error('No books found in the response');
+    if (!books || !Array.isArray(books) || books.length === 0) {
+      console.error('No books found in the response or invalid format');
       throw new Error('Failed to parse book recommendations from API response');
-    } else {
-      console.log(`Found ${books.length} books in Perplexity response`);
-    }
+    } 
+    
+    console.log(`Found ${books.length} books in Perplexity response`);
 
     // Add source field and unique ids to each book
     books = books.map(book => ({
       ...book,
       id: crypto.randomUUID(),
-      source: "perplexity"
+      source: "perplexity",
+      coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category || 'novel')}`
     }));
 
     console.log("Returning books from Perplexity function:", books.length);
-    return new Response(JSON.stringify({ books }), {
+    return new Response(JSON.stringify({ books, success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
