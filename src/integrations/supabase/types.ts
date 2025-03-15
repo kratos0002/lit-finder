@@ -9,7 +9,161 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          author: string
+          category: string
+          cover_image: string | null
+          created_at: string
+          description: string
+          id: string
+          match_score: number
+          publication_date: string | null
+          source: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          author: string
+          category: string
+          cover_image?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          match_score: number
+          publication_date?: string | null
+          source: string
+          summary: string
+          title: string
+        }
+        Update: {
+          author?: string
+          category?: string
+          cover_image?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          match_score?: number
+          publication_date?: string | null
+          source?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          link: string
+          source: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          link: string
+          source: string
+          summary: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          link?: string
+          source?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      saved_books: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_books_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_posts: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          link: string
+          source: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          link: string
+          source: string
+          summary: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          link?: string
+          source?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      user_feedback: {
+        Row: {
+          id: string
+          message: string
+          timestamp: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          message: string
+          timestamp?: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          message?: string
+          timestamp?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
