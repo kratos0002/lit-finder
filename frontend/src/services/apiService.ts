@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 import { RecommendationRequest, RecommendationResponse } from "@/types";
@@ -73,6 +72,7 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     };
     
     console.log('Request payload:', requestPayload);
+    console.log(`API endpoint: ${API_BASE_URL}/api/recommendations`);
     
     // Set up headers with API key
     const headers: HeadersInit = {
@@ -86,8 +86,6 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       console.warn('API key not found in environment variables');
     }
     
-    console.log(`Sending request to ${API_BASE_URL}/api/recommendations`);
-    
     // Make the API request
     const response = await fetch(`${API_BASE_URL}/api/recommendations`, {
       method: 'POST',
@@ -95,8 +93,8 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       body: JSON.stringify(requestPayload),
     });
     
-    // Log the response time for debugging
-    console.log(`API response received in ${performance.now()}ms`);
+    // Log the response status
+    console.log(`API response status: ${response.status}`);
     
     if (!response.ok) {
       // Handle specific error codes
@@ -105,6 +103,8 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       } else if (response.status === 504) {
         throw new Error('Request timed out. Please try again.');
       } else {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
         throw new Error(`API request failed with status ${response.status}`);
       }
     }
