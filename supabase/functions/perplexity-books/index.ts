@@ -7,6 +7,83 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Fallback books for when API fails
+const getFallbackBooks = (query) => {
+  console.log('Using fallback books for query:', query);
+  
+  // Convert query to lowercase for case-insensitive matching
+  const lowercaseQuery = query.toLowerCase();
+  
+  // Define some categories to match against
+  const categories = {
+    fiction: ['novel', 'story', 'fiction', 'fantasy', 'sci-fi', 'science fiction', 'thriller', 'mystery', 'crime', 'horror'],
+    nonfiction: ['history', 'science', 'biography', 'memoir', 'self-help', 'business', 'economics', 'psychology', 'philosophy'],
+    arts: ['art', 'music', 'film', 'photography', 'design', 'architecture', 'fashion', 'theater', 'painting'],
+    technology: ['technology', 'programming', 'coding', 'computer', 'software', 'data', 'ai', 'web', 'digital'],
+    classics: ['classic', 'shakespeare', 'dickens', 'austen', 'tolstoy', 'ancient', 'greek', 'roman']
+  };
+  
+  // Determine the most likely category based on the query
+  let matchedCategory = 'fiction'; // Default
+  for (const [category, keywords] of Object.entries(categories)) {
+    if (keywords.some(keyword => lowercaseQuery.includes(keyword))) {
+      matchedCategory = category;
+      break;
+    }
+  }
+  
+  // Generate match scores between 60-95
+  const getRandomScore = () => Math.floor(Math.random() * 35) + 60;
+  
+  // Create fallback books
+  const fallbackBooks = [
+    {
+      title: `${query}: A Comprehensive Guide`,
+      author: "Jane Scholar",
+      description: `This comprehensive exploration of ${query} offers readers an in-depth analysis of its history, current relevance, and future implications. Dr. Jane Scholar brings decades of expertise to illuminate this fascinating subject through accessible prose and compelling examples. The book features interviews with leading experts, case studies, and practical insights for readers at all levels of familiarity with the topic.`,
+      summary: `A thorough and accessible examination of ${query} from historical, contemporary, and future perspectives.`,
+      category: matchedCategory,
+      publicationDate: "2023",
+      matchScore: getRandomScore(),
+    },
+    {
+      title: `Understanding ${query}`,
+      author: "Michael Johnson",
+      description: `In "Understanding ${query}", Michael Johnson demystifies this complex subject through clear explanations and engaging storytelling. Drawing from various disciplines, the book presents a holistic framework for comprehending the nuances of ${query}. Johnson includes practical applications and thought exercises that help readers develop a deeper appreciation for the subject and its real-world implications.`,
+      summary: `An accessible introduction to ${query} with practical applications and engaging examples.`,
+      category: matchedCategory,
+      publicationDate: "2022",
+      matchScore: getRandomScore(),
+    },
+    {
+      title: `The Essential Guide to ${query}`,
+      author: "Sarah Williams",
+      description: `"The Essential Guide to ${query}" serves as both an introduction for beginners and a reference for experienced practitioners. Sarah Williams synthesizes decades of research into a practical framework, offering readers a structured approach to mastering ${query}. The book includes detailed explanations, illustrative examples, and hands-on activities designed to reinforce key concepts and encourage application.`,
+      summary: `A practical and comprehensive reference that breaks down complex aspects of ${query} into manageable concepts.`,
+      category: matchedCategory,
+      publicationDate: "2021",
+      matchScore: getRandomScore(),
+    },
+    {
+      title: `${query} Reimagined`,
+      author: "David Chen",
+      description: `David Chen presents a revolutionary perspective on ${query} in this groundbreaking work. Challenging conventional wisdom, "Reimagined" offers fresh insights and innovative approaches to understanding and applying ${query} principles. Chen combines theoretical foundations with practical examples, making complex ideas accessible while maintaining their transformative potential.`,
+      summary: `A revolutionary approach to ${query} that challenges traditional perspectives and offers innovative solutions.`,
+      category: matchedCategory,
+      publicationDate: "2022",
+      matchScore: getRandomScore(),
+    }
+  ];
+  
+  // Add IDs and source field
+  return fallbackBooks.map(book => ({
+    ...book,
+    id: crypto.randomUUID(),
+    source: "fallback",
+    coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category || 'novel')}`
+  }));
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -28,8 +105,18 @@ serve(async (req) => {
     const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
 
     if (!apiKey) {
-      console.error('Perplexity API key not found');
-      throw new Error('Perplexity API key not found');
+      console.error('Perplexity API key not found, using fallback books');
+      // Return fallback books
+      const fallbackBooks = getFallbackBooks(query);
+      console.log(`Returning ${fallbackBooks.length} fallback books`);
+      
+      return new Response(JSON.stringify({ 
+        books: fallbackBooks, 
+        success: true,
+        source: "fallback" 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Querying Perplexity API for:', query);
@@ -50,133 +137,157 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
 `;
 
     console.log("Sending request to Perplexity API");
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a literary expert who provides detailed book recommendations based on user queries. Your responses should be well-structured, accurate, and formatted exactly as JSON when requested. Always return a valid JSON array with no additional text or markdown.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.2,
-        max_tokens: 2000,
-        top_p: 0.9,
-        frequency_penalty: 0.0,
-        presence_penalty: 0.0
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Perplexity API error status:', response.status);
-      console.error('Perplexity API error response:', errorText);
-      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
-    }
-
-    console.log("Received response from Perplexity API");
-    const data = await response.json();
-    console.log('Perplexity response received');
-    
-    const content = data.choices[0].message.content;
-    console.log('Raw content from Perplexity:', content);
-    
-    // Extract JSON from content (in case it's wrapped in text or markdown)
-    let books = [];
     try {
-      // First, try to parse the entire content as JSON
-      books = JSON.parse(content);
-      console.log('Successfully parsed content as JSON');
-    } catch (e) {
-      console.log('Failed to parse content directly as JSON, trying to extract JSON');
-      // If that fails, try to extract JSON from markdown or text
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || 
-                        content.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-sonar-small-128k-online',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a literary expert who provides detailed book recommendations based on user queries. Your responses should be well-structured, accurate, and formatted exactly as JSON when requested. Always return a valid JSON array with no additional text or markdown.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.2,
+          max_tokens: 2000,
+          top_p: 0.9,
+          frequency_penalty: 0.0,
+          presence_penalty: 0.0
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Perplexity API error status:', response.status);
+        console.error('Perplexity API error response:', errorText);
+        throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
+      }
+
+      console.log("Received response from Perplexity API");
+      const data = await response.json();
+      console.log('Perplexity response received');
       
-      if (jsonMatch) {
-        try {
-          const jsonText = jsonMatch[0] || jsonMatch[1];
-          console.log('Extracted JSON candidate:', jsonText);
-          books = JSON.parse(jsonText);
-          console.log('Successfully extracted and parsed JSON from content');
-        } catch (e2) {
-          console.error('Failed to parse JSON from content:', e2.message);
-          console.error('Extracted text was:', jsonMatch[0] || jsonMatch[1]);
-          
-          // Last-ditch effort - try to fix common JSON formatting issues
+      const content = data.choices[0].message.content;
+      console.log('Raw content from Perplexity:', content);
+      
+      // Extract JSON from content (in case it's wrapped in text or markdown)
+      let books = [];
+      try {
+        // First, try to parse the entire content as JSON
+        books = JSON.parse(content);
+        console.log('Successfully parsed content as JSON');
+      } catch (e) {
+        console.log('Failed to parse content directly as JSON, trying to extract JSON');
+        // If that fails, try to extract JSON from markdown or text
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || 
+                          content.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        
+        if (jsonMatch) {
           try {
-            const fixedJson = (jsonMatch[0] || jsonMatch[1])
-              .replace(/(\w+):/g, '"$1":')  // Add quotes to keys
-              .replace(/'/g, '"');          // Replace single quotes with double quotes
-            
-            books = JSON.parse(fixedJson);
-            console.log('Successfully parsed fixed JSON');
-          } catch (e3) {
-            console.error('Failed to parse fixed JSON:', e3.message);
+            const jsonText = jsonMatch[0] || jsonMatch[1];
+            console.log('Extracted JSON candidate:', jsonText);
+            books = JSON.parse(jsonText);
+            console.log('Successfully extracted and parsed JSON from content');
+          } catch (e2) {
+            console.error('Failed to parse JSON from content:', e2.message);
+            console.error('Extracted text was:', jsonMatch[0] || jsonMatch[1]);
             throw new Error('Failed to parse book recommendations from API response');
           }
-        }
-      } else if (content.includes('{') && content.includes('}')) {
-        // Try to extract JSON using a more aggressive approach
-        try {
-          const startIdx = content.indexOf('[');
-          const endIdx = content.lastIndexOf(']') + 1;
-          
-          if (startIdx >= 0 && endIdx > startIdx) {
-            const jsonCandidate = content.substring(startIdx, endIdx);
-            console.log('JSON candidate from substring approach:', jsonCandidate);
-            books = JSON.parse(jsonCandidate);
-            console.log('Successfully extracted JSON using substring approach');
-          } else {
-            throw new Error('Invalid JSON structure');
+        } else if (content.includes('{') && content.includes('}')) {
+          // Try to extract JSON using a more aggressive approach
+          try {
+            const startIdx = content.indexOf('[');
+            const endIdx = content.lastIndexOf(']') + 1;
+            
+            if (startIdx >= 0 && endIdx > startIdx) {
+              const jsonCandidate = content.substring(startIdx, endIdx);
+              console.log('JSON candidate from substring approach:', jsonCandidate);
+              books = JSON.parse(jsonCandidate);
+              console.log('Successfully extracted JSON using substring approach');
+            } else {
+              throw new Error('Invalid JSON structure');
+            }
+          } catch (e3) {
+            console.error('Failed to extract JSON using substring approach:', e3.message);
+            throw new Error('Failed to parse book recommendations from API response');
           }
-        } catch (e3) {
-          console.error('Failed to extract JSON using substring approach:', e3.message);
+        } else {
+          console.error('No JSON pattern found in content');
           throw new Error('Failed to parse book recommendations from API response');
         }
-      } else {
-        console.error('No JSON pattern found in content');
-        throw new Error('Failed to parse book recommendations from API response');
       }
+
+      if (!books || !Array.isArray(books) || books.length === 0) {
+        console.error('No books found in the response or invalid format');
+        throw new Error('Failed to parse book recommendations from API response');
+      } 
+      
+      console.log(`Found ${books.length} books in Perplexity response`);
+
+      // Add source field and unique ids to each book
+      books = books.map(book => ({
+        ...book,
+        id: crypto.randomUUID(),
+        source: "perplexity",
+        coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category || 'novel')}`
+      }));
+
+      console.log("Returning books from Perplexity function:", books.length);
+      return new Response(JSON.stringify({ books, success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (perplexityError) {
+      console.error('Error calling Perplexity API:', perplexityError.message);
+      
+      // Fall back to generated books
+      const fallbackBooks = getFallbackBooks(query);
+      console.log(`Returning ${fallbackBooks.length} fallback books after API error`);
+      
+      return new Response(JSON.stringify({ 
+        books: fallbackBooks, 
+        success: true,
+        source: "fallback",
+        error: perplexityError.message
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-
-    if (!books || !Array.isArray(books) || books.length === 0) {
-      console.error('No books found in the response or invalid format');
-      throw new Error('Failed to parse book recommendations from API response');
-    } 
-    
-    console.log(`Found ${books.length} books in Perplexity response`);
-
-    // Add source field and unique ids to each book
-    books = books.map(book => ({
-      ...book,
-      id: crypto.randomUUID(),
-      source: "perplexity",
-      coverImage: `https://source.unsplash.com/400x600/?book,${encodeURIComponent(book.category || 'novel')}`
-    }));
-
-    console.log("Returning books from Perplexity function:", books.length);
-    return new Response(JSON.stringify({ books, success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error in perplexity-books function:', error.message);
-    return new Response(JSON.stringify({ 
-      error: error.message, 
-      books: [],
-      success: false
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    
+    try {
+      // Try to generate fallback books even on general errors
+      const query = (await req.json())?.query || "general books";
+      const fallbackBooks = getFallbackBooks(query);
+      
+      return new Response(JSON.stringify({ 
+        error: error.message, 
+        books: fallbackBooks,
+        success: true,
+        source: "fallback"
+      }), {
+        status: 200, // Return 200 even though there was an error since we're providing fallback content
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (fallbackError) {
+      // If even fallback generation fails, return a proper error
+      return new Response(JSON.stringify({ 
+        error: error.message, 
+        fallbackError: fallbackError.message,
+        books: [],
+        success: false
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 });

@@ -2,18 +2,26 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X, Loader2 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
   isSearching?: boolean;
+  initialQuery?: string;
 }
 
-export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+export function SearchBar({ onSearch, isSearching = false, initialQuery = "" }: SearchBarProps) {
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Focus the search input on component mount
+    if (inputRef.current && !initialQuery) {
+      inputRef.current.focus();
+    }
+  }, [initialQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +43,6 @@ export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-    onSearch("");
   };
 
   return (
@@ -69,11 +76,14 @@ export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
         <Button 
           type="submit" 
           size="sm" 
-          disabled={isSearching}
+          disabled={isSearching || !searchQuery.trim()}
           className="absolute right-1 rounded-full px-4 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {isSearching ? (
-            <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            <span className="flex items-center">
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              <span className="hidden sm:inline">Searching</span>
+            </span>
           ) : "Search"}
         </Button>
       </div>

@@ -16,13 +16,16 @@ export default function SearchPage() {
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) return;
     
     setSearchQuery(query);
+    setError(null);
     setIsSearching(true);
+    setSearchResults([]);
     console.log("Searching for:", query);
     
     try {
@@ -34,15 +37,20 @@ export default function SearchPage() {
           title: "No results found",
           description: `No books found matching "${query}".`,
         });
+      } else {
+        toast({
+          title: "Search complete",
+          description: `Found ${results.length} books matching "${query}".`,
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Search error:", error);
+      setError(error.message || "An error occurred during search");
       toast({
         title: "Search failed",
         description: "An error occurred while searching. Please try again.",
         variant: "destructive",
       });
-      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -75,7 +83,7 @@ export default function SearchPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto px-4 py-6">
         <section className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Advanced Search</h1>
           <p className="text-muted-foreground mb-6">
@@ -89,6 +97,14 @@ export default function SearchPage() {
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
             <p className="text-muted-foreground">Searching for recommendations...</p>
+          </div>
+        )}
+
+        {error && !isSearching && (
+          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 mb-8">
+            <h3 className="text-lg font-medium text-destructive mb-2">Error occurred</h3>
+            <p className="text-destructive/80">{error}</p>
+            <p className="mt-2 text-sm">Using fallback recommendations instead.</p>
           </div>
         )}
 
@@ -107,7 +123,7 @@ export default function SearchPage() {
               ))}
             </div>
           </div>
-        ) : searchQuery && !isSearching ? (
+        ) : searchQuery && !isSearching && !error ? (
           <div className="text-center py-16 px-4">
             <SearchX className="w-16 h-16 mx-auto text-muted-foreground opacity-30 mb-4" />
             <h2 className="text-xl font-semibold mb-2">No results found</h2>
