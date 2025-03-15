@@ -1,8 +1,16 @@
+
 # Alexandria
 
 ## About Alexandria
 
 Alexandria is a digital library inspired by the lost Library of Alexandria, designed to unveil literary treasures through AI-powered recommendations. Our platform curates trending news, social posts, and articles based on your reading habits, creating a personalized literary discovery experience.
+
+## Project Structure
+
+This repository is organized as a monorepo with the following structure:
+
+- `/frontend`: The React-based web application
+- `/backend`: The Alexandria recommendation engine API (FastAPI)
 
 ## Features
 
@@ -13,13 +21,6 @@ Alexandria is a digital library inspired by the lost Library of Alexandria, desi
 - **Natural Language Search**: Find books using conversational language like "science fiction with AI themes"
 - **Current Scrolls**: Discover trending content related to literature and reading
 
-## Project Structure
-
-The repository is organized into two main parts:
-
-- **Frontend**: The React-based web application
-- **Backend**: The Alexandria recommendation engine API (FastAPI)
-
 ## Getting Started
 
 ### Frontend
@@ -27,11 +28,8 @@ The repository is organized into two main parts:
 To run the frontend locally:
 
 ```sh
-# Clone the repository
-git clone https://github.com/kratos0002/lit-finder.git
-
-# Navigate to the project directory
-cd lit-finder
+# Navigate to the frontend directory
+cd frontend
 
 # Install dependencies
 npm i
@@ -95,6 +93,15 @@ Alexandria is built with modern technologies:
 ## Development
 
 This project uses Vite for frontend development and FastAPI for the backend. After running the dev servers, you'll have access to hot-module replacement and instant previews of your changes.
+
+## Deployment
+
+The project is set up for deployment with:
+
+- Frontend: Vercel, Netlify, or any static hosting service
+- Backend: Render, Railway, or any Python hosting service
+
+Make sure to set the appropriate environment variables in your deployment environment.
 
 ## Contributing
 
