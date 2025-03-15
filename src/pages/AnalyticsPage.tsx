@@ -1,7 +1,6 @@
-
 import { MainLayout } from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Book, ChartPie, BookOpen, Bookmark, Search, Eye, Click, Clock } from "lucide-react";
+import { Book, ChartPie, BookOpen, Bookmark, Search, Eye, MousePointerClick, Clock } from "lucide-react";
 import { mockBooks } from "@/data/mockData";
 
 export default function AnalyticsPage() {
@@ -129,7 +128,7 @@ export default function AnalyticsPage() {
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="text-sm font-medium flex items-center gap-2">
-                      <Click className="w-4 h-4 text-muted-foreground" />
+                      <MousePointerClick className="w-4 h-4 text-muted-foreground" />
                       Click-through Rate
                     </span>
                     <span className="text-sm text-muted-foreground">{analyticsMockData.clickThroughRate}%</span>

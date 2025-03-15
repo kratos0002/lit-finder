@@ -1,39 +1,57 @@
 
 import { useState, useEffect } from "react";
-import { Book, categories, books, getBooksByCategory, searchBooks } from "@/data/books";
+import { Book } from "@/types";
+import { categories } from "@/data/books";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { BookCard } from "@/components/BookCard";
-import { BookDetails } from "@/components/BookDetails";
+import { BookDetailsModal } from "@/components/BookDetailsModal";
 import { FeaturedBooks } from "@/components/FeaturedBooks";
 import { BookOpen } from "lucide-react";
+import { getBooks, getBooksByCategory, searchBooks } from "@/services/bookService";
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>(books);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBookDetailsOpen, setIsBookDetailsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch all books on initial load
   useEffect(() => {
-    // Simulate loading delay for animation purposes
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
+    const fetchBooks = async () => {
+      setIsLoading(true);
+      const books = await getBooks();
+      setAllBooks(books);
+      setFilteredBooks(books);
+      
+      // Simulate loading delay for animation purposes
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 800);
+    };
 
-    return () => clearTimeout(timer);
+    fetchBooks();
   }, []);
 
+  // Filter books based on search query or category
   useEffect(() => {
-    if (searchQuery) {
-      setFilteredBooks(searchBooks(searchQuery));
-    } else if (selectedCategory) {
-      setFilteredBooks(getBooksByCategory(selectedCategory));
-    } else {
-      setFilteredBooks(books);
-    }
-  }, [selectedCategory, searchQuery]);
+    const filterBooks = async () => {
+      if (searchQuery) {
+        const results = await searchBooks(searchQuery);
+        setFilteredBooks(results);
+      } else if (selectedCategory) {
+        const results = await getBooksByCategory(selectedCategory);
+        setFilteredBooks(results);
+      } else {
+        setFilteredBooks(allBooks);
+      }
+    };
+
+    filterBooks();
+  }, [selectedCategory, searchQuery, allBooks]);
 
   const handleSelectBook = (book: Book) => {
     setSelectedBook(book);
@@ -72,7 +90,7 @@ const Index = () => {
           </div>
 
           <section className="mb-16 animate-scale-in">
-            <FeaturedBooks books={books} onSelectBook={handleSelectBook} />
+            <FeaturedBooks books={filteredBooks.slice(0, 3)} onSelectBook={handleSelectBook} />
           </section>
 
           <section className="mb-6">
@@ -106,7 +124,7 @@ const Index = () => {
             </div>
           )}
 
-          <BookDetails 
+          <BookDetailsModal 
             book={selectedBook} 
             isOpen={isBookDetailsOpen} 
             onClose={handleCloseBookDetails} 
