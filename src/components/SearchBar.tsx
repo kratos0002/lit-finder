@@ -9,9 +9,15 @@ interface SearchBarProps {
   onSearch: (query: string) => void;
   isSearching?: boolean;
   initialQuery?: string;
+  placeholder?: string;
 }
 
-export function SearchBar({ onSearch, isSearching = false, initialQuery = "" }: SearchBarProps) {
+export function SearchBar({ 
+  onSearch, 
+  isSearching = false, 
+  initialQuery = "",
+  placeholder = "Search for books, authors, or topics..." 
+}: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +57,7 @@ export function SearchBar({ onSearch, isSearching = false, initialQuery = "" }: 
         <Input
           ref={inputRef}
           type="text"
-          placeholder="Search for books, authors, or topics..."
+          placeholder={placeholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -77,7 +83,7 @@ export function SearchBar({ onSearch, isSearching = false, initialQuery = "" }: 
           type="submit" 
           size="sm" 
           disabled={isSearching || !searchQuery.trim()}
-          className="absolute right-1 rounded-full px-4 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="absolute right-1 rounded-full px-4 bg-[#ff9800] hover:bg-[#e68900] text-white"
         >
           {isSearching ? (
             <span className="flex items-center">

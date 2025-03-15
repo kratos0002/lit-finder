@@ -10,7 +10,7 @@ export interface Book {
   tags?: string[];
   matchScore: number;
   publicationDate: string;
-  source: "perplexity" | "openai" | "goodreads" | "fallback";
+  source: "perplexity" | "openai" | "goodreads" | "fallback" | "api";
 }
 
 export interface Review {
@@ -51,4 +51,24 @@ export interface MouseEventHandlers {
   onClick?: (e: React.MouseEvent) => void;
   onMouseEnter?: (e: React.MouseEvent) => void;
   onMouseLeave?: (e: React.MouseEvent) => void;
+}
+
+// New API response interfaces
+export interface RecommendationRequest {
+  user_id: string;
+  search_term: string;
+  history?: string[];
+  feedback?: FeedbackItem[];
+}
+
+export interface FeedbackItem {
+  category: string;
+  rating: "positive" | "negative" | "neutral";
+}
+
+export interface RecommendationResponse {
+  top_book: Book;
+  top_review: Review;
+  top_social: SocialPost;
+  recommendations: Book[];
 }

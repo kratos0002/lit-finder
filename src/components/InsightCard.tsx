@@ -33,7 +33,7 @@ export function InsightCard({ item, type }: InsightCardProps) {
           variant="outline"
           className={cn(
             "w-full gap-2 mt-auto",
-            type === "review" ? "border-orange hover:bg-orange/10" : "border-purple hover:bg-purple/10"
+            type === "review" ? "bg-[#ff9800] hover:bg-[#e68900] text-white border-none" : "bg-[#8e24aa] hover:bg-[#7b1fa2] text-white border-none"
           )}
           asChild
         >
