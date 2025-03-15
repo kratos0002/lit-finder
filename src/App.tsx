@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import HomePage from "./pages/HomePage";
 import MyBooksPage from "./pages/MyBooksPage";
-import SearchPage from "./pages/SearchPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
@@ -24,7 +23,6 @@ const App = () => (
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/my-books" element={<MyBooksPage />} />
-            <Route path="/search" element={<SearchPage />} />
             <Route path="/category/:categoryId?" element={<CategoryPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/auth" element={<AuthPage />} />

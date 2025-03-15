@@ -1,6 +1,5 @@
-
 import { ReactNode, useState } from "react";
-import { BookOpen, Home, List, MessageCircle, PieChart, Search, X } from "lucide-react";
+import { BookOpen, Home, List, MessageCircle, PieChart, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
 
   const navigation = [
     { name: "Home", icon: Home, href: "/" },
-    { name: "Search", icon: Search, href: "/search" },
     { name: "My Books", icon: BookOpen, href: "/my-books" },
     { name: "Analytics", icon: PieChart, href: "/analytics" },
   ];
