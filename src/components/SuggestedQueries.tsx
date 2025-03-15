@@ -24,8 +24,8 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
   return (
     <section className="py-16 flex flex-col items-center justify-center text-center">
       <div className="mb-10 text-muted-foreground space-y-3">
-        <h2 className="text-2xl font-medium text-foreground/90 mb-3">Begin Your Literary Journey</h2>
-        <p className="text-lg">Enter a literary work you enjoy to get started</p>
+        <h2 className="text-2xl font-medium text-foreground/90 mb-3 font-serif">Begin Your Journey Through Alexandria's Archives</h2>
+        <p className="text-lg">What literary treasure would you seek in Alexandria?</p>
         <p className="text-base text-muted-foreground/80 max-w-2xl mx-auto">
           For example: "science fiction like three body problem" or "mystery novels similar to Sherlock Holmes"
         </p>
@@ -35,7 +35,7 @@ export function SuggestedQueries({ onQuerySelect }: SuggestedQueriesProps) {
         {suggestedQueries.map((query, index) => (
           <Badge 
             key={index}
-            className="px-4 py-2.5 text-sm hover:bg-primary/20 cursor-pointer hover-lift" 
+            className="px-4 py-2.5 text-sm hover:bg-primary/20 cursor-pointer hover-lift bg-card/40 backdrop-blur-sm border border-primary/10" 
             onClick={() => handleQueryClick(query)}
             variant="outline"
           >

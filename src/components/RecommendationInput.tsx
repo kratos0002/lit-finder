@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, Loader2 } from "lucide-react";
+import { Search, X, Loader2, Scroll } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface RecommendationInputProps {
@@ -50,9 +50,9 @@ export function RecommendationInput({
   return (
     <div className="space-y-4">
       <div className="text-left mb-2">
-        <h2 className="text-xl font-medium mb-1">What kind of literary work would you like to read?</h2>
+        <h2 className="text-xl font-serif font-medium mb-1">What literary treasure would you seek in Alexandria?</h2>
         <p className="text-muted-foreground text-sm">
-          Describe a book, author, or genre you enjoy, and we'll find perfect matches.
+          Describe a book, author, or genre you enjoy, and we'll unveil perfect matches from our vast archives.
         </p>
       </div>
       
@@ -85,12 +85,12 @@ export function RecommendationInput({
           {isLoading ? (
             <span className="flex items-center gap-1">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Finding...</span>
+              <span>Searching...</span>
             </span>
           ) : (
             <span className="flex items-center gap-1">
-              <Search className="w-4 h-4" />
-              <span>Get Recommendations</span>
+              <Scroll className="w-4 h-4" />
+              <span>Unveil Treasures</span>
             </span>
           )}
         </Button>
@@ -98,7 +98,7 @@ export function RecommendationInput({
       
       {searchHistory.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
-          <span className="text-sm text-muted-foreground mr-1 my-1">Recent searches:</span>
+          <span className="text-sm text-muted-foreground mr-1 my-1">Previous searches:</span>
           {searchHistory.map((term, index) => (
             <Badge 
               key={index} 

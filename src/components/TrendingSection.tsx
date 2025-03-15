@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { TrendingCard, TrendingItem } from "./TrendingCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, TrendingUp } from "lucide-react";
+import { RefreshCw, Scroll } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { mockTrendingItems } from "@/data/mockTrendingData";
 import { useQuery } from "@tanstack/react-query";
@@ -64,12 +64,12 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
     try {
       await refetch();
       toast({
-        title: "Trends refreshed",
-        description: "The latest trending content has been loaded."
+        title: "Scrolls updated",
+        description: "The latest scrolls have been delivered to Alexandria."
       });
     } catch (err) {
       toast({
-        title: "Failed to refresh trends",
+        title: "Failed to update scrolls",
         description: "Please try again later.",
         variant: "destructive"
       });
@@ -87,27 +87,27 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
         if (!savedItems.some(savedItem => savedItem.id === item.id)) {
           setSavedItems([...savedItems, item]);
           toast({
-            title: "Item saved",
-            description: `"${item.title}" has been saved to your collection.`
+            title: "Scroll preserved",
+            description: `"${item.title}" has been preserved in your collection.`
           });
         } else {
           toast({
-            title: "Already saved",
+            title: "Already preserved",
             description: `"${item.title}" is already in your collection.`
           });
         }
       } else {
         toast({
           title: "Sign in required",
-          description: "Please sign in to save items to your collection.",
+          description: "Please sign in to preserve scrolls in your collection.",
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error("Error saving item:", error);
+      console.error("Error preserving scroll:", error);
       toast({
-        title: "Error saving item",
-        description: "An error occurred while saving the item.",
+        title: "Error preserving scroll",
+        description: "An error occurred while preserving the scroll.",
         variant: "destructive"
       });
     }
@@ -121,8 +121,8 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
     <section className="mb-12 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-semibold">Trending News and Social</h2>
-          <TrendingUp className="w-5 h-5 text-primary" />
+          <h2 className="text-2xl font-serif font-semibold">Current Scrolls</h2>
+          <Scroll className="w-5 h-5 text-primary" />
         </div>
         
         <Button 
@@ -135,7 +135,7 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
           {isLoading ? (
             <>Loading<RefreshCw className="w-4 h-4 animate-spin" /></>
           ) : (
-            <>Refresh Trends<RefreshCw className="w-4 h-4" /></>
+            <>Update Scrolls<RefreshCw className="w-4 h-4" /></>
           )}
         </Button>
       </div>
@@ -146,7 +146,7 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
           <Badge 
             key={category}
             variant={selectedCategory === category ? "default" : "outline"}
-            className="cursor-pointer"
+            className="cursor-pointer font-serif"
             onClick={() => setSelectedCategory(category === 'All' ? null : category)}
           >
             {category}
@@ -156,14 +156,14 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
       
       {error ? (
         <div className="p-4 bg-destructive/10 border border-destructive rounded-lg mb-8">
-          <p className="text-destructive">Failed to load trending content. Please try again later.</p>
+          <p className="text-destructive">Failed to unfurl scrolls. Please try again later.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredItems?.map((item, index) => (
             <div 
               key={item.id} 
-              className="bg-[#3a3a3a] rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl"
+              className="rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl"
               style={{ animationDelay: `${0.1 * (index % 6)}s` }}
             >
               <TrendingCard 

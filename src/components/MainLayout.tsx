@@ -1,6 +1,6 @@
 
 import { ReactNode, useState } from "react";
-import { BookOpen, Home, List, MessageCircle, PieChart, X } from "lucide-react";
+import { BookOpen, Home, List, MessageCircle, PieChart, Scroll, X, BookText, LibraryBig } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,10 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
   const location = useLocation();
 
   const navigation = [
-    { name: "Home", icon: Home, href: "/" },
-    { name: "My Books", icon: BookOpen, href: "/my-books" },
-    { name: "Analytics", icon: PieChart, href: "/analytics" },
+    { name: "Discover", icon: Home, href: "/" },
+    { name: "My Scrolls", icon: Scroll, href: "/my-books" },
+    { name: "Categories", icon: BookText, href: "/category" },
+    { name: "Librarian's Ledger", icon: PieChart, href: "/analytics" },
   ];
 
   const toggleSidebar = () => {
@@ -44,9 +45,9 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
         <div className="h-full flex flex-col gap-y-5 overflow-y-auto border-r border-sidebar-border/50 bg-sidebar/95 px-4 py-6">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-x-2.5">
-              <BookOpen className="w-7 h-7 text-primary" />
-              <span className="text-xl font-semibold text-gradient">
-                LiteratureDiscovery
+              <LibraryBig className="w-7 h-7 text-primary" />
+              <span className="text-xl font-serif font-semibold text-gradient">
+                Alexandria
               </span>
             </Link>
             <Button 
@@ -100,16 +101,16 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
           </Button>
           
           <div className="w-full max-w-md mx-auto">
-            {onSearch && <SearchBar onSearch={onSearch} />}
+            {onSearch && <SearchBar onSearch={onSearch} placeholder="What literary treasure would you seek in Alexandria?" />}
           </div>
         </header>
 
-        <main className="flex-1 py-8 px-4 md:px-6">
+        <main className="flex-1 py-8 px-4 md:px-6 bg-[#f5e8c7]/5">
           {children}
         </main>
       </div>
 
-      {/* Feedback chatbot button */}
+      {/* Scribe's Counsel chat button */}
       <Button
         onClick={toggleChat}
         className={cn(
@@ -124,14 +125,14 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
       {isChatOpen && (
         <div className="fixed z-40 bottom-24 right-6 w-80 md:w-96 h-96 rounded-xl bg-card/95 backdrop-blur-sm border border-border/50 shadow-xl animate-fade-in">
           <div className="flex items-center justify-between p-4 border-b border-border/30">
-            <h3 className="font-medium">Feedback & Help</h3>
+            <h3 className="font-serif font-medium">Scribe's Counsel</h3>
             <Button variant="ghost" size="icon" onClick={toggleChat}>
               <X className="w-4 h-4" />
             </Button>
           </div>
           <div className="p-4 h-[calc(100%-64px)] overflow-y-auto">
             <div className="bg-muted/50 rounded-lg p-3 mb-3 text-sm">
-              What would you like to share? A new feature idea, something missing, or an issue?
+              Share your wisdom on these treasures. What would you like to discuss?
             </div>
             {/* We'll add chat functionality later */}
             <p className="text-sm text-muted-foreground text-center mt-6">
