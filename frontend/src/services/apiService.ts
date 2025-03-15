@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 import { RecommendationRequest, RecommendationResponse } from "@/types";
@@ -50,7 +51,8 @@ export const saveSearchTerm = async (term: string): Promise<void> => {
 // Get recommendations from the API
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
   try {
-    console.log('Getting recommendations for:', searchTerm);
+    console.log('Getting recommendations from Alexandria API for:', searchTerm);
+    console.log('API base URL:', API_BASE_URL);
     
     if (!searchTerm || searchTerm.trim() === '') {
       throw new Error('Search term is empty');
@@ -72,7 +74,7 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     };
     
     console.log('Request payload:', requestPayload);
-    console.log(`API endpoint: ${API_BASE_URL}/api/recommendations`);
+    console.log(`Making API request to: ${API_BASE_URL}/api/recommendations`);
     
     // Set up headers with API key
     const headers: HeadersInit = {
@@ -82,6 +84,7 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     // Add API key if available
     if (API_KEY) {
       headers['X-API-Key'] = API_KEY;
+      console.log('Using API key for authentication');
     } else {
       console.warn('API key not found in environment variables');
     }

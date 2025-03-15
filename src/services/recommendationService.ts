@@ -1,103 +1,25 @@
 
-import { Book, RecommendationRequest, RecommendationResponse, Review, SocialPost } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from 'uuid';
-import { searchBooks } from "@/services/bookService";
+import { RecommendationResponse } from "@/types";
+import { getRecommendations as apiGetRecommendations } from "@/services/apiService";
 import { mockReviews, mockSocialPosts } from "@/data/mockData";
+import { searchBooks } from "@/services/bookService";
 
-// Generate or retrieve a user ID
-const getUserId = async (): Promise<string> => {
-  // Check if user is authenticated
-  const { data: session } = await supabase.auth.getSession();
-  if (session?.session?.user?.id) {
-    return session.session.user.id;
-  }
-  
-  // If not authenticated, get or create ID from localStorage
-  let anonymousId = localStorage.getItem('anonymousUserId');
-  if (!anonymousId) {
-    anonymousId = uuidv4();
-    localStorage.setItem('anonymousUserId', anonymousId);
-  }
-  
-  return anonymousId;
-};
-
-// Get search history from localStorage
-const getSearchHistory = (): string[] => {
-  // Get history from localStorage
-  const historyJson = localStorage.getItem('searchHistory');
-  if (historyJson) {
-    return JSON.parse(historyJson);
-  }
-  return [];
-};
-
-// Save search term to history
-const saveSearchTerm = async (term: string): Promise<void> => {
-  // Save to localStorage
-  let history: string[] = [];
-  const historyJson = localStorage.getItem('searchHistory');
-  
-  if (historyJson) {
-    history = JSON.parse(historyJson);
-  }
-  
-  // Add new term at the beginning and limit to 5 items
-  history = [term, ...history.filter(item => item !== term)].slice(0, 5);
-  localStorage.setItem('searchHistory', JSON.stringify(history));
-};
-
-// Get recommendations from the API
+// Export a function that tries the API first, then falls back to mock
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
   try {
-    console.log('Getting recommendations for:', searchTerm);
+    console.log('Attempting to get recommendations from API for:', searchTerm);
     
-    if (!searchTerm || searchTerm.trim() === '') {
-      throw new Error('Search term is empty');
-    }
-    
-    // Save search term to history
-    await saveSearchTerm(searchTerm);
-    
-    // Prepare request payload
-    const userId = await getUserId();
-    const history = getSearchHistory();
-    
-    const requestPayload: RecommendationRequest = {
-      user_id: userId,
-      search_term: searchTerm,
-      history: history,
-    };
-    
-    console.log('Request payload:', requestPayload);
-    
-    // Here we would fetch recommendations from the API
-    // For now, we'll use a mock response since the actual API endpoint isn't ready
-    
-    // In the future, implement actual API call:
-    // const response = await fetch('/api/recommendations', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(requestPayload),
-    // });
-    // 
-    // if (!response.ok) {
-    //   throw new Error(`API request failed with status ${response.status}`);
-    // }
-    // 
-    // const data = await response.json();
-    // return data;
-
-    // For now, fallback to using the existing search functionality
-    return await getMockRecommendations(searchTerm);
+    // First try the actual API
+    return await apiGetRecommendations(searchTerm);
   } catch (error) {
-    console.error('Error getting recommendations:', error);
-    throw error;
+    console.error('API recommendation request failed, using fallback:', error);
+    
+    // If API fails, use our mock implementation as fallback
+    return await getMockRecommendations(searchTerm);
   }
 };
 
-// Temporary mock function to simulate the new API using existing search
+// This function will be used as a fallback if the API fails
 async function getMockRecommendations(searchTerm: string): Promise<RecommendationResponse> {
   try {
     console.log('Getting mock recommendations for:', searchTerm);
