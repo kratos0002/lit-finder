@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TrendingCard, TrendingItem } from "./TrendingCard";
 import { Button } from "@/components/ui/button";
@@ -38,7 +37,7 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
         throw new Error('Failed to get trending content');
       }
       
-      return response.data;
+      return response.data as { items: TrendingItem[] };
     },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     refetchOnWindowFocus: false,
@@ -47,11 +46,11 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
   const trendingItems = trendingData?.items || [];
   
   // Extract unique categories from trending items
-  const categories = ['All', ...new Set(trendingItems?.map(item => item.category) || [])];
+  const categories = ['All', ...new Set(trendingItems.map(item => item.category) || [])];
   
   // Filter items by selected category
   const filteredItems = selectedCategory && selectedCategory !== 'All'
-    ? trendingItems?.filter(item => item.category === selectedCategory)
+    ? trendingItems.filter(item => item.category === selectedCategory)
     : trendingItems;
 
   const handleRefresh = async () => {
@@ -143,7 +142,7 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
       {/* Category filters - only show if we have items */}
       {trendingItems.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {categories.map(category => (
+          {categories.map((category) => (
             <Badge 
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
@@ -190,7 +189,7 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems?.map((item, index) => (
+          {filteredItems?.length > 0 && filteredItems.map((item, index) => (
             <div 
               key={item.id} 
               className="rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl"
