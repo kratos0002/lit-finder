@@ -60,12 +60,20 @@
   html {
     @apply scroll-smooth;
   }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-medium;
+  }
+  
+  input, textarea, select {
+    @apply focus:outline-none focus:ring-1 focus:ring-primary/50;
+  }
 }
 
 /* For the various card states and effects */
 @layer components {
   .glass-card {
-    @apply backdrop-blur-sm bg-card/80 border border-white/10 shadow-lg rounded-xl transition-all;
+    @apply backdrop-blur-sm bg-card/80 border border-white/5 shadow-lg rounded-xl transition-all;
   }
   
   .interactive-card {
@@ -97,6 +105,18 @@
   .image-loaded {
     animation: none;
   }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-white to-secondary bg-clip-text text-transparent;
+  }
+  
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+  
+  .input-minimal {
+    @apply bg-background/50 backdrop-blur-sm border-white/10 focus:border-primary/50 transition-all;
+  }
 }
 
 @keyframes pulse {
@@ -105,5 +125,14 @@
   }
   50% {
     opacity: 0.7;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
   }
 }

@@ -38,20 +38,20 @@ export function TrendingCard({ item, onSave, isSaved = false }: TrendingCardProp
   };
 
   return (
-    <Card className="overflow-hidden h-full border-border/50 hover:shadow-lg transition-all duration-300">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
-          <span>{item.source}</span>
-          <span>•</span>
-          <div className="flex items-center">
-            <CalendarDays className="w-3 h-3 mr-1" />
+    <Card className="overflow-hidden h-full border-border/30 hover:shadow-lg transition-all duration-300 bg-card/60 backdrop-blur-sm">
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground/80">
+          <span className="font-medium">{item.source}</span>
+          <span className="text-muted-foreground/50">•</span>
+          <div className="flex items-center text-muted-foreground/70">
+            <CalendarDays className="w-3 h-3 mr-1 opacity-70" />
             {new Date(item.date).toLocaleDateString()}
           </div>
         </div>
         
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{item.title}</h3>
+        <h3 className="font-semibold text-lg mb-3 line-clamp-2 text-foreground/90">{item.title}</h3>
         
-        <p className="text-sm line-clamp-3 text-foreground/80 mb-4">
+        <p className="text-sm line-clamp-3 text-foreground/70 mb-5">
           {item.summary}
         </p>
         
@@ -59,14 +59,14 @@ export function TrendingCard({ item, onSave, isSaved = false }: TrendingCardProp
           <Button
             variant="outline"
             className={cn(
-              "flex-1 gap-2",
-              "bg-[#ff9800] hover:bg-[#e68900] text-white border-none"
+              "flex-1 gap-2 text-sm font-medium",
+              "bg-primary/90 hover:bg-primary text-primary-foreground border-none"
             )}
             asChild
           >
             <a href={item.url} target="_blank" rel="noopener noreferrer">
               Read More
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3.5 h-3.5 ml-1 opacity-90" />
             </a>
           </Button>
           
@@ -74,9 +74,10 @@ export function TrendingCard({ item, onSave, isSaved = false }: TrendingCardProp
             variant="outline" 
             size="icon"
             className={cn(
+              "transition-all",
               isSaved 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-transparent text-muted-foreground hover:bg-primary/10"
+                ? "bg-primary/80 text-primary-foreground" 
+                : "bg-card/80 text-muted-foreground hover:bg-primary/10 hover:text-primary"
             )}
             onClick={handleSave}
             title={isSaved ? "Saved" : "Save to My Books"}
