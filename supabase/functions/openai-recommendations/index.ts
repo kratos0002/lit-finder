@@ -48,7 +48,7 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',

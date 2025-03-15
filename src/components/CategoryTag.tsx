@@ -26,9 +26,9 @@ interface CategoryTagProps {
   size?: "sm" | "md" | "lg";
   variant?: "default" | "outline" | "secondary" | "destructive";
   showIcon?: boolean;
-  onClick?: () => void;
-  onMouseEnter?: () => void;
-  onMouseLeave?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
+  onMouseEnter?: (e: React.MouseEvent) => void;
+  onMouseLeave?: (e: React.MouseEvent) => void;
   className?: string;
 }
 

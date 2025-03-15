@@ -45,3 +45,10 @@ export interface Category {
   description: string;
   icon?: string;
 }
+
+// Add a new interface for mouse event handlers
+export interface MouseEventHandlers {
+  onClick?: (e: React.MouseEvent) => void;
+  onMouseEnter?: (e: React.MouseEvent) => void;
+  onMouseLeave?: (e: React.MouseEvent) => void;
+}
