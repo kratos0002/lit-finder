@@ -4,8 +4,20 @@ import { getRecommendations as apiGetRecommendations } from "@/services/apiServi
 import { mockReviews, mockSocialPosts } from "@/data/mockData";
 import { searchBooks } from "@/services/bookService";
 
-// Export the API function directly
-export const getRecommendations = apiGetRecommendations;
+// Export a function that tries the API first, then falls back to mock
+export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
+  try {
+    console.log('Attempting to get recommendations from API for:', searchTerm);
+    
+    // First try the actual API
+    return await apiGetRecommendations(searchTerm);
+  } catch (error) {
+    console.error('API recommendation request failed, using fallback:', error);
+    
+    // If API fails, use our mock implementation as fallback
+    return await getMockRecommendations(searchTerm);
+  }
+};
 
 // This function will be used as a fallback if the API fails
 async function getMockRecommendations(searchTerm: string): Promise<RecommendationResponse> {
