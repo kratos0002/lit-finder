@@ -15,7 +15,14 @@ serve(async (req) => {
 
   try {
     console.log("Perplexity function called");
-    const { query } = await req.json();
+    const requestData = await req.json();
+    const query = requestData.query;
+    
+    if (!query || typeof query !== 'string') {
+      console.error('Invalid query:', query);
+      throw new Error('Invalid or missing query parameter');
+    }
+    
     console.log("Search query:", query);
     
     const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
