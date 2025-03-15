@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TopPicksSection } from "@/components/TopPicksSection";
 import { RecommendationsGrid } from "@/components/RecommendationsGrid";
 import { SuggestedQueries } from "@/components/SuggestedQueries";
+import { TrendingSection } from "@/components/TrendingSection"; // Import the new component
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -153,6 +154,9 @@ export default function HomePage() {
             )}
           </div>
         </section>
+
+        {/* Add the Trending Section here */}
+        <TrendingSection searchHistory={searchHistory} />
 
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive rounded-lg mb-8">
