@@ -18,6 +18,7 @@ serve(async (req) => {
     const apiKey = Deno.env.get('PERPLEXITY_API_KEY');
 
     if (!apiKey) {
+      console.error('Perplexity API key not found');
       throw new Error('Perplexity API key not found');
     }
 
@@ -74,13 +75,16 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
     console.log('Perplexity response received');
     
     const content = data.choices[0].message.content;
+    console.log('Raw content from Perplexity:', content.substring(0, 100) + '...');
     
     // Extract JSON from content (in case it's wrapped in text or markdown)
     let books = [];
     try {
       // First, try to parse the entire content as JSON
       books = JSON.parse(content);
+      console.log('Successfully parsed content as JSON');
     } catch (e) {
+      console.log('Failed to parse content directly as JSON, trying to extract JSON');
       // If that fails, try to extract JSON from markdown or text
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || 
                         content.match(/\[\s*\{[\s\S]*\}\s*\]/);
@@ -88,11 +92,20 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
       if (jsonMatch && jsonMatch[1]) {
         try {
           books = JSON.parse(jsonMatch[1]);
+          console.log('Successfully extracted and parsed JSON from content');
         } catch (e2) {
           console.error('Failed to parse JSON from content:', e2);
           books = [];
         }
+      } else {
+        console.error('No JSON pattern found in content');
       }
+    }
+
+    if (books.length === 0) {
+      console.error('No books found in the response');
+    } else {
+      console.log(`Found ${books.length} books`);
     }
 
     // Add source field to each book
@@ -106,7 +119,7 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
     });
   } catch (error) {
     console.error('Error in perplexity-books function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message, books: [] }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

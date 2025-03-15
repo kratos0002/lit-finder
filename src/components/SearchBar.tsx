@@ -1,8 +1,9 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -11,15 +12,36 @@ interface SearchBarProps {
 export function SearchBar({ onSearch }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Please enter a search term",
+        description: "Type a book title, author, or topic to search",
+      });
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      onSearch(searchQuery.trim());
+      console.log("Searching for:", searchQuery.trim());
+    } catch (error) {
+      toast({
+        title: "Search error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      });
+      console.error("Search error:", error);
+    }
   };
 
   const clearSearch = () => {
     setSearchQuery("");
+    setIsSearching(false);
     onSearch("");
     if (inputRef.current) {
       inputRef.current.focus();
@@ -52,6 +74,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
             type="button"
             onClick={clearSearch}
             className="absolute right-12 p-1 rounded-full text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Clear search"
           >
             <X className="w-4 h-4" />
           </button>
@@ -60,9 +83,12 @@ export function SearchBar({ onSearch }: SearchBarProps) {
         <Button 
           type="submit" 
           size="sm" 
+          disabled={isSearching}
           className="absolute right-1 rounded-full px-4 bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          Search
+          {isSearching ? (
+            <Loader2 className="w-4 h-4 animate-spin mr-1" />
+          ) : "Search"}
         </Button>
       </div>
     </form>
