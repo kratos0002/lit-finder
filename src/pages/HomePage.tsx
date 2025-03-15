@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/MainLayout";
 import { BookCard } from "@/components/BookCard";
 import { InsightCard } from "@/components/InsightCard";
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RecommendationInput } from "@/components/RecommendationInput";
 import { getRecommendations } from "@/services/recommendationService";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ChevronRight, Loader2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -20,6 +20,7 @@ export default function HomePage() {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [savedBooks, setSavedBooks] = useState<Book[]>([]);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const { toast } = useToast();
 
   // Use React Query for recommendations
@@ -34,7 +35,24 @@ export default function HomePage() {
     enabled: false, // Don't fetch on component mount
   });
 
+  // Load search history from localStorage on component mount
+  useEffect(() => {
+    const loadSearchHistory = () => {
+      const historyJson = localStorage.getItem('searchHistory');
+      if (historyJson) {
+        setSearchHistory(JSON.parse(historyJson));
+      }
+    };
+    
+    loadSearchHistory();
+  }, []);
+
   const handleGetRecommendations = async (query: string) => {
+    setSearchQuery(query);
+    refetch();
+  };
+
+  const handleHistoryTagClick = (query: string) => {
     setSearchQuery(query);
     refetch();
   };
@@ -99,6 +117,26 @@ export default function HomePage() {
           
           <div className="max-w-2xl mx-auto">
             <RecommendationInput onSubmit={handleGetRecommendations} isLoading={isLoading} />
+            
+            {/* Search History Tags */}
+            {searchHistory.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                <div className="w-full flex items-center justify-center gap-2 mb-2 text-sm text-muted-foreground">
+                  <History className="h-4 w-4" />
+                  <span>Recent Searches:</span>
+                </div>
+                {searchHistory.map((term, index) => (
+                  <Badge 
+                    key={index}
+                    variant="outline" 
+                    className="px-3 py-1 cursor-pointer hover:bg-primary/20 transition-colors duration-200"
+                    onClick={() => handleHistoryTagClick(term)}
+                  >
+                    {term}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
