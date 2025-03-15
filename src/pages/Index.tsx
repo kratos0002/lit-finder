@@ -56,6 +56,7 @@ const Index = () => {
     if (!query.trim()) {
       setFilteredBooks(allBooks);
       setSearchQuery("");
+      setSearchError(null);
       return;
     }
     
@@ -68,23 +69,23 @@ const Index = () => {
       const results = await searchBooks(query);
       console.log(`Search returned ${results.length} results for "${query}"`);
       
-      setFilteredBooks(results);
-      
-      // Refresh all books after a search to include new recommendations
-      const updatedBooks = await getBooks();
-      setAllBooks(updatedBooks);
-      
       if (results.length === 0) {
         toast({
           title: "No results found",
           description: "Try a different search term or browse categories",
         });
-      } else if (results.length > 0) {
+      } else {
         toast({
           title: "Recommendations ready",
           description: `Found ${results.length} books matching "${query}"`,
         });
+        
+        // Refresh all books to include new recommendations
+        const updatedBooks = await getBooks();
+        setAllBooks(updatedBooks);
       }
+      
+      setFilteredBooks(results);
     } catch (error) {
       console.error('Search error:', error);
       setSearchError("Failed to perform search. Please try again.");
@@ -93,6 +94,7 @@ const Index = () => {
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
+      setFilteredBooks([]);
     } finally {
       setIsSearching(false);
     }
@@ -101,6 +103,7 @@ const Index = () => {
   // Handle category selection
   const handleCategorySelect = async (category: string | null) => {
     setSelectedCategory(category);
+    setSearchError(null);
     
     try {
       if (category) {
@@ -169,6 +172,15 @@ const Index = () => {
             <div className="flex flex-col items-center justify-center py-8 text-destructive">
               <AlertCircle className="w-8 h-8 mb-2" />
               <p>{searchError}</p>
+              <button 
+                onClick={() => {
+                  setSearchError(null);
+                  setFilteredBooks(allBooks);
+                }}
+                className="mt-3 text-sm underline"
+              >
+                View all books
+              </button>
             </div>
           )}
 

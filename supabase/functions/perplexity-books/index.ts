@@ -54,7 +54,7 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
         messages: [
           {
             role: 'system',
-            content: 'You are a literary expert who provides detailed book recommendations based on user queries. Your responses should be well-structured, accurate, and formatted exactly as JSON when requested.'
+            content: 'You are a literary expert who provides detailed book recommendations based on user queries. Your responses should be well-structured, accurate, and formatted exactly as JSON when requested. Always return a valid JSON array with no additional text or markdown.'
           },
           {
             role: 'user',
@@ -70,10 +70,10 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
+      const errorText = await response.text();
       console.error('Perplexity API error status:', response.status);
-      console.error('Perplexity API error response:', errorData);
-      throw new Error(`Perplexity API error: ${response.status} - ${errorData}`);
+      console.error('Perplexity API error response:', errorText);
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`);
     }
 
     console.log("Received response from Perplexity API");
@@ -81,7 +81,7 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
     console.log('Perplexity response received');
     
     const content = data.choices[0].message.content;
-    console.log('Raw content from Perplexity:', content.substring(0, 100) + '...');
+    console.log('Raw content from Perplexity:', content);
     
     // Extract JSON from content (in case it's wrapped in text or markdown)
     let books = [];
@@ -97,10 +97,25 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
       
       if (jsonMatch && jsonMatch[1]) {
         try {
+          const jsonText = jsonMatch[1].trim();
           books = JSON.parse(jsonMatch[1]);
           console.log('Successfully extracted and parsed JSON from content');
         } catch (e2) {
-          console.error('Failed to parse JSON from content:', e2);
+          console.error('Failed to parse JSON from content:', e2.message);
+          console.error('Extracted text was:', jsonMatch[1]);
+          books = [];
+        }
+      } else if (content.includes('{') && content.includes('}')) {
+        // Try to extract JSON using a more aggressive approach
+        try {
+          const jsonCandidate = content.substring(
+            content.indexOf('['), 
+            content.lastIndexOf(']') + 1
+          );
+          books = JSON.parse(jsonCandidate);
+          console.log('Successfully extracted JSON using substring approach');
+        } catch (e3) {
+          console.error('Failed to extract JSON using substring approach:', e3.message);
           books = [];
         }
       } else {
@@ -110,23 +125,29 @@ title, author, description, summary, category, publicationDate, matchScore (a nu
 
     if (books.length === 0) {
       console.error('No books found in the response');
+      throw new Error('Failed to parse book recommendations from API response');
     } else {
       console.log(`Found ${books.length} books in Perplexity response`);
     }
 
-    // Add source field to each book
+    // Add source field and unique ids to each book
     books = books.map(book => ({
       ...book,
+      id: crypto.randomUUID(),
       source: "perplexity"
     }));
 
-    console.log("Returning books from Perplexity function");
+    console.log("Returning books from Perplexity function:", books.length);
     return new Response(JSON.stringify({ books }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in perplexity-books function:', error);
-    return new Response(JSON.stringify({ error: error.message, books: [] }), {
+    console.error('Error in perplexity-books function:', error.message);
+    return new Response(JSON.stringify({ 
+      error: error.message, 
+      books: [],
+      success: false
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X, Loader2 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 
 interface SearchBarProps {
@@ -15,8 +15,9 @@ export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!searchQuery.trim()) {
       toast({
         title: "Please enter a search term",
@@ -25,17 +26,8 @@ export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
       return;
     }
     
-    try {
-      console.log("Searching for:", searchQuery.trim());
-      onSearch(searchQuery.trim());
-    } catch (error) {
-      toast({
-        title: "Search error",
-        description: "Something went wrong. Please try again later.",
-        variant: "destructive",
-      });
-      console.error("Search error:", error);
-    }
+    console.log("Searching for:", searchQuery.trim());
+    onSearch(searchQuery.trim());
   };
 
   const clearSearch = () => {
@@ -58,6 +50,7 @@ export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           className="pl-10 pr-10 py-6 rounded-full border border-border/50 bg-background/70 backdrop-blur-sm transition-all"
+          disabled={isSearching}
         />
         <Search className="absolute left-3 w-5 h-5 text-muted-foreground" />
         
@@ -67,6 +60,7 @@ export function SearchBar({ onSearch, isSearching = false }: SearchBarProps) {
             onClick={clearSearch}
             className="absolute right-12 p-1 rounded-full text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Clear search"
+            disabled={isSearching}
           >
             <X className="w-4 h-4" />
           </button>
