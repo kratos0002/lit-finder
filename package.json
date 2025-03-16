@@ -13,7 +13,9 @@
     "backend:dev": "cd backend && uvicorn app.main:app --reload",
     "backend:install": "cd backend && pip install -r requirements.txt",
     "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
-    "setup": "npm install && npm run backend:install"
+    "build": "npm run frontend:build",
+    "setup": "npm install && npm run backend:install",
+    "deploy": "cd frontend && npm run build && vercel --prod"
   },
   "keywords": [
     "books",
