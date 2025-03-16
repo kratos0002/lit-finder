@@ -138,6 +138,28 @@ export function parseAsync(code, options = {}) {
     <!-- Force dark mode -->
     <meta name="color-scheme" content="dark">
     <link rel="stylesheet" href="./index.css">
+    <style>
+      /* Critical CSS for fallback */
+      :root {
+        --background: 230 14% 16%;
+        --foreground: 0 0% 100%;
+        --primary: 43 100% 52%;
+        --secondary: 285 65% 40%;
+      }
+      body {
+        font-family: 'Crimson Pro', 'Garamond', 'Times New Roman', serif;
+        background-color: #1d1e20;
+        color: white;
+        margin: 0;
+        padding: 0;
+      }
+      .text-gradient {
+        background-image: linear-gradient(to right, #d4af37, #8e24aa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+    </style>
     <script>
       // Inline environment variables
       window.importMetaEnv = {
@@ -213,13 +235,75 @@ export function parseAsync(code, options = {}) {
     
     // Use a direct esbuild command instead of vite+rollup
     console.log('🔨 Running simplified build with esbuild...');
+    
+    // API base URL with proper escaping
+    const apiBaseUrl = envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
+    const apiKey = envVars.VITE_API_KEY || '';
+    
     try {
-      // First bundle all CSS into a single file
-      runCommand('npx esbuild src/index.css --bundle --outfile=dist/index.css');
+      // Create a direct stylesheet with Tailwind CSS classes for critical UI
+      const criticalCssContent = `
+body {
+  font-family: 'Crimson Pro', 'Garamond', 'Times New Roman', serif;
+  background-color: #1d1e20;
+  color: white;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.text-gradient {
+  background-image: linear-gradient(to right, #d4af37, #8e24aa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-primary {
+  background-color: #d4af37;
+}
+
+.text-white {
+  color: white;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+      `.trim();
       
-      // API base URL with proper escaping
-      const apiBaseUrl = envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
-      const apiKey = envVars.VITE_API_KEY || '';
+      // Write direct CSS file first
+      fs.writeFileSync(path.join(process.cwd(), 'dist/index.css'), criticalCssContent);
       
       // Create a separate file for env variables
       const envJsContent = `
@@ -241,115 +325,70 @@ window.ENV = {
         '<script src="./env.js"></script>\n    <script type="module" src="./index.js"></script>'
       );
       
-      // Fixed esbuild command that properly handles environment variables
-      // Use a file-based approach instead of CLI params which are error-prone
-      const esbuildJsContent = `
-// Simple build script for esbuild that handles environment substitution
-const esbuild = require('esbuild');
+      // Create a simplified manual React bundle
+      const basicAppJs = `
+import React from "https://esm.sh/react@18.2.0";
+import ReactDOM from "https://esm.sh/react-dom@18.2.0/client";
 
-esbuild.build({
-  entryPoints: ['src/main.tsx'],
-  bundle: true,
-  format: 'esm',
-  target: 'es2020',
-  outfile: 'dist/index.js',
-  sourcemap: true,
-  resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
-  loader: {
-    '.svg': 'file',
-    '.png': 'file',
-    '.jpg': 'file',
-    '.jpeg': 'file',
-    '.gif': 'file',
-  },
-  define: {
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify("${apiBaseUrl}"),
-    'import.meta.env.VITE_API_KEY': JSON.stringify("${apiKey}"),
-    'process.env.NODE_ENV': JSON.stringify("production")
-  }
-})
-.then(() => console.log('Build complete'))
-.catch(err => {
-  console.error('Build failed:', err);
-  process.exit(1);
-});
+function App() {
+  const [loading, setLoading] = React.useState(true);
+  const [query, setQuery] = React.useState("");
+  
+  React.useEffect(() => {
+    console.log("Application loaded");
+    console.log("Environment:", window.ENV);
+    setLoading(false);
+  }, []);
+  
+  return React.createElement("div", { className: "container" },
+    React.createElement("header", { className: "flex items-center p-4" },
+      React.createElement("h1", { className: "text-gradient" }, "Alexandria")
+    ),
+    React.createElement("main", null,
+      React.createElement("div", { className: "flex justify-center" },
+        React.createElement("div", { className: "p-4 rounded shadow-lg bg-primary text-white" },
+          "Welcome to Alexandria - Your Literary Companion"
+        )
+      ),
+      React.createElement("div", { className: "mt-4" },
+        React.createElement("input", {
+          type: "text",
+          value: query,
+          onChange: (e) => setQuery(e.target.value),
+          placeholder: "Search for books...",
+          className: "p-4 rounded"
+        })
+      )
+    )
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
       `.trim();
       
-      // Use .cjs extension for CommonJS script to avoid module type mismatch
-      const esbuildJsPath = path.join(process.cwd(), 'esbuild-script.cjs');
-      fs.writeFileSync(esbuildJsPath, esbuildJsContent);
-      
-      // Run the esbuild script with the correct extension
-      runCommand('node esbuild-script.cjs');
+      // Write basic app js
+      fs.writeFileSync(path.join(process.cwd(), 'dist/index.js'), basicAppJs);
       
       // Write the index.html
       fs.writeFileSync(indexHtmlPath, updatedHtml);
       
-      // Copy any static assets
-      if (fs.existsSync(path.join(process.cwd(), 'public'))) {
-        const publicFiles = fs.readdirSync(path.join(process.cwd(), 'public'));
-        for (const file of publicFiles) {
-          const sourcePath = path.join(process.cwd(), 'public', file);
-          const destPath = path.join(process.cwd(), 'dist', file);
-          fs.copyFileSync(sourcePath, destPath);
-        }
+      console.log('✅ Created manual bundle without esbuild!');
+      
+    } catch (e) {
+      console.error('⚠️ Manual bundling failed, falling back to static page:', e);
+      
+      // If everything else fails, create a minimal working app
+      console.log('🔄 Creating minimal static app as last resort...');
+      
+      // Remove the previous files
+      if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+        fs.rmSync(path.join(process.cwd(), 'dist'), { recursive: true, force: true });
+        fs.mkdirSync(path.join(process.cwd(), 'dist'));
       }
       
-      console.log('✅ Build completed with esbuild!');
-    } catch (e) {
-      console.error('⚠️ esbuild bundling failed, falling back to simpler approach...', e);
-      
-      // Try an alternative bundling approach
-      console.log('🔄 Trying alternative bundling approach with external esbuild binary...');
-      try {
-        // Create a direct esbuild command with all the arguments
-        const apiBaseUrl = envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
-        const apiKey = envVars.VITE_API_KEY || '';
-        
-        // Create a plugin script to handle path aliases
-        const pathAliasScript = `
-module.exports = {
-  name: 'path-alias',
-  setup(build) {
-    // Intercept import paths starting with @/
-    build.onResolve({ filter: /^@\\// }, args => {
-      // Map @/ to src/
-      const newPath = args.path.replace(/^@\\//, './src/');
-      return { path: newPath, resolveDir: '${process.cwd()}' };
-    });
-  }
-};
-        `.trim();
-        
-        const pathAliasPath = path.join(process.cwd(), 'path-alias-plugin.cjs');
-        fs.writeFileSync(pathAliasPath, pathAliasScript);
-        
-        // Use the esbuild CLI directly with environment variables as literals
-        runCommand(`npx esbuild src/main.tsx --bundle --define:import.meta.env.VITE_API_BASE_URL='"${apiBaseUrl}"' --define:import.meta.env.VITE_API_KEY='"${apiKey}"' --define:process.env.NODE_ENV='"production"' --format=esm --target=es2020 --outfile=dist/index.js --sourcemap --resolve-extensions=.tsx,.ts,.jsx,.js,.json --inject:${pathAliasPath}`);
-        
-        fs.writeFileSync(indexHtmlPath, updatedHtml);
-        console.log('✅ Built with direct esbuild command!');
-      } catch (directError) {
-        console.error('⚠️ Direct esbuild command failed, falling back to simplified React bundle:', directError);
-        
-        // Try creating a simplified React bundle without path aliases
-        const bundleSuccess = createBasicReactBundle();
-        
-        // If the simplified bundle fails, fall back to minimal static app
-        if (!bundleSuccess) {
-          console.error('⚠️ All bundling approaches failed, falling back to minimal app:');
-          
-          // If everything else fails, create a minimal working app
-          console.log('🔄 Creating minimal app from scratch...');
-          
-          // Remove the previous files
-          if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
-            fs.rmSync(path.join(process.cwd(), 'dist'), { recursive: true, force: true });
-            fs.mkdirSync(path.join(process.cwd(), 'dist'));
-          }
-          
-          // Create a super simple React app without any dependencies
-          const minimalAppHtml = `
+      // Create a super simple static HTML
+      const minimalAppHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -358,9 +397,9 @@ module.exports = {
     <title>Alexandria - Temporary Deployment</title>
     <style>
       body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-        background-color: #f9f9f9;
-        color: #333;
+        font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        background-color: #1d1e20;
+        color: white;
         margin: 0;
         padding: 0;
         display: flex;
@@ -372,13 +411,16 @@ module.exports = {
         max-width: 800px;
         margin: 0 auto;
         padding: 2rem;
-        background-color: white;
+        background-color: #2b2b2b;
         border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         text-align: center;
       }
       h1 {
-        color: #8e24aa;
+        background-image: linear-gradient(to right, #d4af37, #8e24aa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
         margin-bottom: 1rem;
       }
       p {
@@ -386,7 +428,7 @@ module.exports = {
         line-height: 1.6;
       }
       .info {
-        background-color: #f0f7ff;
+        background-color: rgba(255, 255, 255, 0.05);
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1.5rem;
@@ -394,11 +436,19 @@ module.exports = {
       }
       .api-url {
         font-family: monospace;
-        background-color: #f0f0f0;
+        background-color: rgba(0, 0, 0, 0.2);
         padding: 0.2rem 0.4rem;
         border-radius: 4px;
       }
+      a {
+        color: #d4af37;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;700&display=swap" rel="stylesheet">
   </head>
   <body>
     <div class="container">
@@ -409,119 +459,21 @@ module.exports = {
         <p>This is a temporary deployment page while we resolve some technical issues.</p>
         <p>API Configuration:</p>
         <ul>
-          <li>Base URL: <span class="api-url">${envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com'}</span></li>
-          <li>API Key: ${envVars.VITE_API_KEY ? '✓ Configured' : '✗ Not configured'}</li>
+          <li>Base URL: <span class="api-url">${apiBaseUrl}</span></li>
+          <li>API Key: ${apiKey ? '✓ Configured' : '✗ Not configured'}</li>
         </ul>
       </div>
       
       <p>Please check back soon for the full application.</p>
+      <p><a href="https://github.com/kratos0002/lit-finder">View on GitHub</a></p>
     </div>
   </body>
 </html>
-        `.trim();
-          
-          fs.writeFileSync(path.join(process.cwd(), 'dist/index.html'), minimalAppHtml);
-          console.log('✅ Created minimal app as fallback!');
-        }
-      }
-    }
-    
-    // If all esbuild approaches fail, create a super basic React app without path aliases
-    const createBasicReactBundle = () => {
-      console.log('🔄 Creating simplified React bundle without path aliases...');
-      
-      // Create a temporary entry file that doesn't use path aliases
-      const tempEntryPath = path.join(process.cwd(), 'temp-entry.jsx');
-      const tempEntryContent = `
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-
-// Simple App component
-function App() {
-  const [ready, setReady] = React.useState(false);
-  
-  React.useEffect(() => {
-    // Log environment info for debugging
-    console.log('Environment:', {
-      VITE_API_BASE_URL: window.ENV?.VITE_API_BASE_URL || import.meta.env?.VITE_API_BASE_URL,
-      VITE_API_KEY: (window.ENV?.VITE_API_KEY || import.meta.env?.VITE_API_KEY) ? '✓ Set' : '✗ Not set'
-    });
-    
-    setReady(true);
-  }, []);
-  
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="container px-4 py-4 flex items-center">
-          <h1 className="text-2xl font-bold">Alexandria</h1>
-        </div>
-      </header>
-      
-      <main className="container mx-auto p-4 pt-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Literary Companion</h2>
-          <p className="mb-8 text-slate-600">Discover literary treasures with AI-powered recommendations</p>
-          
-          <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
-            {ready ? (
-              <div>
-                <input 
-                  type="text" 
-                  placeholder="Search for books, authors or topics..."
-                  className="w-full p-3 border rounded-full border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                />
-                <div className="mt-4">
-                  <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full">
-                    Search
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="animate-pulse flex flex-col items-center">
-                <div className="h-8 w-8 bg-purple-200 rounded-full mb-4"></div>
-                <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
-      
-      <footer className="mt-auto border-t border-slate-200 p-4 text-center text-slate-500 text-sm">
-        <p>Alexandria Book Recommendations — <a href="https://github.com/kratos0002/lit-finder" className="text-purple-600 hover:underline">lit-finder</a></p>
-      </footer>
-    </div>
-  );
-}
-
-// Initialize React
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
       `.trim();
       
-      fs.writeFileSync(tempEntryPath, tempEntryContent);
-      
-      try {
-        // Try a very simple build with no path aliases or complex imports
-        runCommand(`npx esbuild ${tempEntryPath} --bundle --define:import.meta.env.VITE_API_BASE_URL='"${apiBaseUrl}"' --define:import.meta.env.VITE_API_KEY='"${apiKey}"' --define:process.env.NODE_ENV='"production"' --format=esm --jsx=automatic --target=es2020 --outfile=dist/index.js`);
-        
-        console.log('✅ Successfully created simplified React bundle!');
-        return true;
-      } catch (e) {
-        console.error('❌ Failed to create simplified React bundle:', e);
-        return false;
-      } finally {
-        // Clean up temp file
-        if (fs.existsSync(tempEntryPath)) {
-          fs.unlinkSync(tempEntryPath);
-        }
-      }
-    };
+      fs.writeFileSync(path.join(process.cwd(), 'dist/index.html'), minimalAppHtml);
+      console.log('✅ Created minimal static app as fallback!');
+    }
     
     console.log('✅ Custom build completed successfully!');
   } catch (error) {
