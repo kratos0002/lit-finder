@@ -1,3 +1,4 @@
+
 import { RecommendationResponse } from "@/types";
 
 // Add type definition for window.ENV
