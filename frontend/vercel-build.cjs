@@ -128,6 +128,15 @@ export function parseAsync(code, options = {}) {
     <meta name="description" content="Alexandria - Digital Library powered by AI" />
     <meta name="author" content="Alexandria" />
     <meta property="og:image" content="/og-image.png" />
+    
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Garamond&display=swap" rel="stylesheet">
+    
+    <!-- Force dark mode -->
+    <meta name="color-scheme" content="dark">
     <link rel="stylesheet" href="./index.css">
     <script>
       // Inline environment variables
@@ -141,7 +150,8 @@ export function parseAsync(code, options = {}) {
       });
     </script>
   </head>
-  <body>
+
+  <body class="bg-[#1d1e20] text-white">
     <div id="root"></div>
     <script type="module" src="./index.js"></script>
   </body>
@@ -242,6 +252,13 @@ esbuild.build({
   outfile: 'dist/index.js',
   sourcemap: true,
   resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+  loader: {
+    '.svg': 'file',
+    '.png': 'file',
+    '.jpg': 'file',
+    '.jpeg': 'file',
+    '.gif': 'file',
+  },
   define: {
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify("${apiBaseUrl}"),
     'import.meta.env.VITE_API_KEY': JSON.stringify("${apiKey}"),

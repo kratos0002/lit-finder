@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alexandria Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #1d1e20;
+      color: white;
+      font-family: "Crimson Pro", serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      color: #d4af37;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .loading {
+      margin-top: 2rem;
+      height: 3px;
+      background: linear-gradient(to right, #d4af37, #8e24aa);
+      width: 250px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 3px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .loading::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 40%;
+      background-color: rgba(255, 255, 255, 0.4);
+      animation: loading 1.5s ease-in-out infinite;
+    }
+    @keyframes loading {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(250%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Alexandria Library</h1>
+    <p>Opening the library doors... Gathering ancient wisdom from the literary cosmos.</p>
+    <div class="loading"></div>
+  </div>
+</body>
+</html> 
