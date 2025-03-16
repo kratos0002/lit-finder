@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { getRecommendations } from "@/services/recommendationService";
 import { Book, RecommendationResponse } from "@/types";
@@ -61,7 +60,7 @@ export function Search({ onResultsReceived }: SearchProps) {
         
         // Save search term to local storage
         const history = JSON.parse(localStorage.getItem("searchHistory") || "[]");
-        const newHistory = [searchTerm, ...history.filter(item => item !== searchTerm)].slice(0, 5);
+        const newHistory = [searchTerm, ...history.filter((item: string) => item !== searchTerm)].slice(0, 5);
         localStorage.setItem("searchHistory", JSON.stringify(newHistory));
         
         // Call the callback if provided
@@ -148,9 +147,9 @@ export function Search({ onResultsReceived }: SearchProps) {
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                   {results.top_book.category || 'Fiction'}
                 </span>
-                {results.top_book.matchScore && (
+                {results.top_book.match_score && (
                   <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                    Match: {Math.round(results.top_book.matchScore * 100)}%
+                    Match: {Math.round(results.top_book.match_score * 100)}%
                   </span>
                 )}
               </div>
@@ -172,9 +171,9 @@ export function Search({ onResultsReceived }: SearchProps) {
                   <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
                     {book.category || 'Fiction'}
                   </span>
-                  {book.matchScore && (
+                  {book.match_score && (
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                      Match: {Math.round(book.matchScore * 100)}%
+                      Match: {Math.round(book.match_score * 100)}%
                     </span>
                   )}
                 </div>

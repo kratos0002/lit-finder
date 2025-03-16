@@ -53,7 +53,7 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
     console.log('Found books:', books);
     
     // Sort by match score
-    books.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    books.sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
     
     // Get the top book
     const topBook = books[0] || {
@@ -64,7 +64,7 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
       description: "This is a sample book description.",
       summary: "This is a sample book summary.",
       category: "Novel",
-      matchScore: 85,
+      match_score: 85,
       publicationDate: "2023",
       source: "fallback"
     };
@@ -73,31 +73,32 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
     const topReview = mockReviews[0] || {
       id: "mock-review-id",
       title: "Sample Review",
+      author: "Review Author",
       source: "Literary Journal",
       date: "2023-05-15",
       summary: "This is a sample review summary.",
-      link: "https://example.com/review"
+      url: "https://example.com/review"
     };
     
     // Get a random social post
     const topSocial = mockSocialPosts[0] || {
       id: "mock-social-id",
       title: "Sample Social Post",
+      author: "Social Media User",
       source: "Twitter",
       date: "2023-05-20",
       summary: "This is a sample social post summary.",
-      link: "https://example.com/social"
+      url: "https://example.com/social"
     };
     
     // Mark all books explicitly as fallback source
     const fallbackBooks = books.map(book => ({
       ...book,
-      source: "fallback" as const
     }));
     
     // Prepare the response
     const response: RecommendationResponse = {
-      top_book: {...topBook, source: "fallback"},
+      top_book: topBook,
       top_review: topReview,
       top_social: topSocial,
       recommendations: fallbackBooks.length > 0 ? fallbackBooks.slice(0, 10) : [topBook]
@@ -114,25 +115,17 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
         id: "fallback-id",
         title: `Books about ${searchTerm}`,
         author: "Unknown Author",
-        coverImage: "https://source.unsplash.com/400x600/?book,novel",
-        description: "We couldn't find specific books matching your search.",
         summary: "We couldn't find specific books matching your search.",
         category: "Unknown",
-        matchScore: 50,
-        publicationDate: "Unknown",
-        source: "fallback"
+        match_score: 50
       },
       recommendations: [{
         id: "fallback-id",
         title: `Books about ${searchTerm}`,
         author: "Unknown Author",
-        coverImage: "https://source.unsplash.com/400x600/?book,novel",
-        description: "We couldn't find specific books matching your search.",
         summary: "We couldn't find specific books matching your search.",
         category: "Unknown",
-        matchScore: 50,
-        publicationDate: "Unknown",
-        source: "fallback"
+        match_score: 50
       }],
       top_review: mockReviews[0],
       top_social: mockSocialPosts[0]

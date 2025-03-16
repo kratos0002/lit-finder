@@ -100,6 +100,7 @@ function getFallbackRecommendations(searchTerm: string): RecommendationResponse 
   const mockReview = {
     id: "mock-review-1",
     title: `Review of books about ${searchTerm}`,
+    author: "Review Author",
     source: "Literary Magazine",
     date: "2023-05-15",
     summary: `An insightful review of literature related to ${searchTerm}.`,
@@ -110,6 +111,7 @@ function getFallbackRecommendations(searchTerm: string): RecommendationResponse 
   const mockSocial = {
     id: "mock-social-1",
     title: `Trending discussions about ${searchTerm}`,
+    author: "Social Media User",
     source: "Twitter",
     date: "2023-06-20",
     summary: `See what readers are saying about ${searchTerm} on social media.`,
@@ -151,3 +153,74 @@ function getFallbackRecommendations(searchTerm: string): RecommendationResponse 
     ]
   };
 }
+
+// Function to get trending items
+export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ items: any[] }> => {
+  console.log('Getting trending items with search history:', searchHistory);
+  
+  try {
+    // Get API base URL from environment variables
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
+    const apiKey = import.meta.env.VITE_API_KEY;
+    const url = `${apiBaseUrl}/api/trending`;
+    
+    // Prepare headers with API key
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add API key header if available
+    if (apiKey) {
+      headers['X-API-Key'] = apiKey;
+    }
+    
+    // Make the API call
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ history: searchHistory })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return { items: data.items || [] };
+  } catch (error) {
+    console.error('Error fetching trending items:', error);
+    
+    // Return mock trending items
+    return {
+      items: [
+        {
+          id: "trend-1",
+          title: "The Rise of AI in Literature",
+          description: "How artificial intelligence is changing the way we discover and read books",
+          category: "Technology",
+          source: "Literary Review",
+          url: "https://example.com/ai-literature",
+          published_at: new Date().toISOString()
+        },
+        {
+          id: "trend-2",
+          title: "Top Summer Reads for 2025",
+          description: "The most anticipated books coming this summer",
+          category: "Reading Lists",
+          source: "Book Magazine",
+          url: "https://example.com/summer-reads",
+          published_at: new Date().toISOString()
+        },
+        {
+          id: "trend-3",
+          title: "Independent Bookstores Making a Comeback",
+          description: "How local bookshops are thriving in the digital age",
+          category: "Industry",
+          source: "Publishing Weekly",
+          url: "https://example.com/bookstore-comeback",
+          published_at: new Date().toISOString()
+        }
+      ]
+    };
+  }
+};
