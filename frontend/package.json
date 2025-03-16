@@ -82,5 +82,10 @@
     "typescript": "^5.3.3",
     "typescript-eslint": "^7.0.2",
     "vite": "^5.2.6"
-  }
+  },
+  "main": "eslint.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
