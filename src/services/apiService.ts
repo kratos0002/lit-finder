@@ -8,6 +8,7 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
   try {
     // Get API base URL from environment variables
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
+    const apiKey = import.meta.env.VITE_API_KEY;
     const url = `${apiBaseUrl}/api/recommendations`;
     
     // Prepare the request payload
@@ -21,16 +22,23 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     console.log('Sending request to:', url);
     console.log('With payload:', payload);
     
+    // Prepare headers with API key
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add API key header if available
+    if (apiKey) {
+      console.log('Using API key for authentication');
+      headers['X-API-Key'] = apiKey;
+    } else {
+      console.warn('No API key found in environment variables');
+    }
+    
     // Make the actual API call
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Include API key if available
-        ...(import.meta.env.VITE_API_KEY && {
-          'Authorization': `Bearer ${import.meta.env.VITE_API_KEY}`
-        })
-      },
+      headers,
       body: JSON.stringify(payload)
     });
     
@@ -44,6 +52,12 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     // Parse the response
     const data = await response.json();
     console.log('API response received:', data);
+    
+    // If we got an empty response or no recommendations, create a fallback
+    if (!data || !data.recommendations || data.recommendations.length === 0) {
+      console.warn('API returned empty results, using fallback');
+      return getFallbackRecommendations(searchTerm);
+    }
     
     // Transform API response to match our expected format if needed
     return {
