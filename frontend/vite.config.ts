@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -30,4 +29,21 @@ export default defineConfig(({ mode }) => ({
   },
   // Base URL for production - can be adjusted if needed
   base: '/',
+  // Optimize dependencies to avoid issues with optional packages
+  optimizeDeps: {
+    exclude: ['@rollup/rollup-linux-x64-gnu']
+  },
+  // Make build more robust for CI environments like Vercel
+  build: {
+    target: 'esnext',
+    outDir: 'dist',
+    assetsDir: 'assets',
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignore circular dependency warnings
+        if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+        warn(warning);
+      }
+    }
+  }
 }));
