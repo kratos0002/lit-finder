@@ -138,6 +138,29 @@ export function parseAsync(code, options = {}) {
     <!-- Force dark mode -->
     <meta name="color-scheme" content="dark">
     <link rel="stylesheet" href="./index.css">
+    
+    <!-- Include Tailwind directly from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: ["class"],
+        theme: {
+          extend: {
+            colors: {
+              background: '#1d1e20',
+              foreground: '#ffffff',
+              primary: '#d4af37',
+              secondary: '#8e24aa',
+              border: '#2b2b2b'
+            },
+            fontFamily: {
+              serif: ['Crimson Pro', 'serif'],
+            },
+          }
+        }
+      }
+    </script>
+    
     <style>
       /* Critical CSS for fallback */
       :root {
@@ -158,6 +181,76 @@ export function parseAsync(code, options = {}) {
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Crimson Pro', serif;
+      }
+      
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+      
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      
+      .bg-primary {
+        background-color: #d4af37;
+      }
+      
+      .text-white {
+        color: white;
+      }
+      
+      .rounded {
+        border-radius: 0.25rem;
+      }
+      
+      .p-4 {
+        padding: 1rem;
+      }
+      
+      .mt-4 {
+        margin-top: 1rem;
+      }
+      
+      .flex {
+        display: flex;
+      }
+      
+      .items-center {
+        align-items: center;
+      }
+      
+      .justify-center {
+        justify-content: center;
+      }
+      
+      .shadow-lg {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      
+      .book-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      .book-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
       }
     </style>
     <script>
@@ -330,6 +423,7 @@ window.ENV = {
 import React from "https://esm.sh/react@18.2.0";
 import ReactDOM from "https://esm.sh/react-dom@18.2.0/client";
 
+// Simple App component that uses Tailwind classes
 function App() {
   const [loading, setLoading] = React.useState(true);
   const [query, setQuery] = React.useState("");
@@ -337,28 +431,67 @@ function App() {
   React.useEffect(() => {
     console.log("Application loaded");
     console.log("Environment:", window.ENV);
-    setLoading(false);
+    setTimeout(() => setLoading(false), 500); // Add slight delay to ensure styles load
   }, []);
   
-  return React.createElement("div", { className: "container" },
-    React.createElement("header", { className: "flex items-center p-4" },
-      React.createElement("h1", { className: "text-gradient" }, "Alexandria")
+  if (loading) {
+    return React.createElement("div", { className: "flex items-center justify-center min-h-screen" },
+      React.createElement("div", { className: "text-center" },
+        React.createElement("div", { className: "w-16 h-16 border-t-4 border-primary rounded-full animate-spin mx-auto mb-4" }),
+        React.createElement("h2", { className: "text-xl text-gradient" }, "Loading Alexandria...")
+      )
+    );
+  }
+  
+  return React.createElement("div", { className: "container mx-auto p-4" },
+    React.createElement("header", { className: "flex items-center p-4 mb-8" },
+      React.createElement("h1", { className: "text-3xl font-serif font-bold text-gradient" }, "Alexandria")
     ),
-    React.createElement("main", null,
-      React.createElement("div", { className: "flex justify-center" },
-        React.createElement("div", { className: "p-4 rounded shadow-lg bg-primary text-white" },
-          "Welcome to Alexandria - Your Literary Companion"
+    React.createElement("main", { className: "max-w-4xl mx-auto" },
+      React.createElement("div", { className: "bg-[#2b2b2b] rounded-lg p-8 shadow-lg mb-8 animate-fade-in" },
+        React.createElement("h2", { className: "text-2xl font-serif mb-4" }, "Discover Your Next Literary Journey"),
+        React.createElement("p", { className: "text-gray-300 mb-4" }, "Our intelligent recommendation engine suggests books tailored to your interests."),
+        React.createElement("div", { className: "relative mt-6" },
+          React.createElement("input", {
+            type: "text",
+            value: query,
+            onChange: (e) => setQuery(e.target.value),
+            placeholder: "e.g., science fiction like Three Body Problem",
+            className: "w-full bg-[#3a3a3a] text-white border-none rounded-full px-4 py-3"
+          }),
+          React.createElement("button", { 
+            className: "absolute right-2 top-2 bg-primary hover:bg-opacity-80 text-black px-4 py-1 rounded-full",
+            onClick: () => alert("Search for: " + query)
+          }, "Unveil Treasures")
         )
       ),
-      React.createElement("div", { className: "mt-4" },
-        React.createElement("input", {
-          type: "text",
-          value: query,
-          onChange: (e) => setQuery(e.target.value),
-          placeholder: "Search for books...",
-          className: "p-4 rounded"
-        })
+      React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in" },
+        React.createElement("div", { className: "bg-[#2b2b2b] p-6 rounded-lg shadow-lg book-card" },
+          React.createElement("h3", { className: "text-xl font-serif mb-2 text-gradient" }, "Crime and Punishment"),
+          React.createElement("p", { className: "text-gray-300 mb-4" }, "Fyodor Dostoevsky"),
+          React.createElement("div", { className: "bg-[#3a3a3a] p-3 rounded" },
+            React.createElement("p", { className: "text-sm" }, "A psychological thriller that explores the moral dilemmas of a troubled student.")
+          )
+        ),
+        React.createElement("div", { className: "bg-[#2b2b2b] p-6 rounded-lg shadow-lg book-card" },
+          React.createElement("h3", { className: "text-xl font-serif mb-2 text-gradient" }, "1984"),
+          React.createElement("p", { className: "text-gray-300 mb-4" }, "George Orwell"),
+          React.createElement("div", { className: "bg-[#3a3a3a] p-3 rounded" },
+            React.createElement("p", { className: "text-sm" }, "A dystopian classic that explores themes of totalitarianism and mass surveillance.")
+          )
+        ),
+        React.createElement("div", { className: "bg-[#2b2b2b] p-6 rounded-lg shadow-lg book-card" },
+          React.createElement("h3", { className: "text-xl font-serif mb-2 text-gradient" }, "The Great Gatsby"),
+          React.createElement("p", { className: "text-gray-300 mb-4" }, "F. Scott Fitzgerald"),
+          React.createElement("div", { className: "bg-[#3a3a3a] p-3 rounded" },
+            React.createElement("p", { className: "text-sm" }, "A portrait of the Jazz Age in all its decadence and excess.")
+          )
+        )
       )
+    ),
+    React.createElement("footer", { className: "mt-12 text-center text-gray-400 text-sm" },
+      React.createElement("p", null, "Alexandria — Your AI-powered literary companion"),
+      React.createElement("a", { href: "https://github.com/kratos0002/lit-finder", className: "text-primary hover:underline" }, "View on GitHub")
     )
   );
 }
