@@ -13,9 +13,19 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     const apiResponse = await apiGetRecommendations(searchTerm);
     
     // If the API returned a valid response with recommendations, return it
+    // But make sure all fields are properly populated or fallback as needed
     if (apiResponse && apiResponse.recommendations && apiResponse.recommendations.length > 0) {
       console.log('Successfully received API recommendations');
-      return apiResponse;
+      
+      // Ensure top_review and top_social aren't null to prevent UI errors
+      // If they are null, use mockData
+      const response = {
+        ...apiResponse,
+        top_review: apiResponse.top_review || mockReviews[0] || null,
+        top_social: apiResponse.top_social || mockSocialPosts[0] || null
+      };
+      
+      return response;
     }
     
     // If API returned empty array but a valid response, return it with a message
@@ -125,8 +135,8 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
         publicationDate: "Unknown",
         source: "fallback"
       }],
-      top_review: null,
-      top_social: null
+      top_review: mockReviews[0],
+      top_social: mockSocialPosts[0]
     };
   }
 }
