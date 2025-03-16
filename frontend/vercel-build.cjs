@@ -174,7 +174,7 @@ export function parseAsync(code, options = {}) {
         // Look for imports of components that might not exist
         const problematicImports = [
           {
-            pattern: /import\s+.*from\s+["']@\/components\/ui\/toaster["'];?\n?/g,
+            pattern: /import\s+.*from\s+["']@\/components\/ui\/toaster[""];?\n?/g,
             replacement: '// Toaster import removed by build script\n'
           },
           {
@@ -232,8 +232,11 @@ window.ENV = {
       
       fs.writeFileSync(path.join(process.cwd(), 'dist/env.js'), envJsContent);
       
-      // Update HTML to include this first
+      // Update HTML to include this first and ensure CSS is included
       const updatedHtml = basicIndexHtml.replace(
+        '</head>',
+        '  <link rel="stylesheet" href="./index.css" />\n  </head>'
+      ).replace(
         '<script type="module" src="./index.js"></script>',
         '<script src="./env.js"></script>\n    <script type="module" src="./index.js"></script>'
       );

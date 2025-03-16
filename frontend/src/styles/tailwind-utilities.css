@@ -1,0 +1,38 @@
+/* Force Tailwind to include critical classes in the build */
+.force-tailwind-include {
+  /* Basic colors and backgrounds */
+  @apply bg-background text-foreground;
+  @apply bg-primary text-primary-foreground;
+  @apply bg-secondary text-secondary-foreground;
+  
+  /* Basic layout */
+  @apply flex flex-col items-center justify-center;
+  @apply grid grid-cols-1 gap-4;
+  @apply m-4 p-4;
+  
+  /* UI Elements */
+  @apply rounded-lg shadow-lg;
+  @apply border border-border;
+  
+  /* Text styling */
+  @apply font-serif text-gradient;
+  
+  /* Components */
+  @apply glass-card interactive-card book-card;
+  
+  /* Animations */
+  @apply animate-fade-in animate-slide-up;
+}
+
+/* Do not remove - these are critical selectors */
+html {
+  @apply bg-[#1d1e20] text-white;
+}
+
+body {
+  @apply bg-background text-foreground;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply bg-gradient-to-r from-[#d4af37] to-purple-400 bg-clip-text text-transparent;
+} 

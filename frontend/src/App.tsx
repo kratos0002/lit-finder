@@ -3,6 +3,9 @@ import { Search } from './components/Search';
 import { TrendingSection } from './components/TrendingSection';
 import { MainLayout } from './components/MainLayout';
 
+// Force import CSS to ensure it's loaded
+import './index.css';
+
 function App() {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
@@ -24,6 +27,11 @@ function App() {
 
   return (
     <MainLayout onSearch={handleSearch}>
+      {/* CSS Test Element - Remove after confirming styles work */}
+      <div className="fixed top-4 right-4 z-50 bg-red-500 text-white p-4 rounded shadow-lg">
+        If you see this red box with white text, Tailwind CSS is working!
+      </div>
+      
       <div className="max-w-6xl mx-auto">
         {!searchTerm ? (
           <div className="space-y-8">
