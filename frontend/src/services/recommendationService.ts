@@ -1,6 +1,5 @@
-
 import { RecommendationResponse } from "@/types";
-import { getRecommendations as apiGetRecommendations } from "@/services/apiService";
+import { getRecommendations as apiGetRecommendations } from "@/integrations/api/apiService";
 import { mockReviews, mockSocialPosts } from "@/data/mockData";
 import { searchBooks } from "@/services/bookService";
 
@@ -28,55 +27,57 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
     const books = await searchBooks(searchTerm);
     console.log('Found books:', books);
     
-    // Sort by match score
-    books.sort((a, b) => b.matchScore - a.matchScore);
-    
-    // Get the top book
-    const topBook = books[0] || {
-      id: "mock-id",
-      title: "Sample Book",
-      author: "Sample Author",
-      coverImage: "https://source.unsplash.com/400x600/?book,novel",
-      description: "This is a sample book description.",
-      summary: "This is a sample book summary.",
-      category: "Novel",
-      matchScore: 85,
-      publicationDate: "2023",
-      source: "fallback"
-    };
-    
-    // Get a random review
-    const topReview = mockReviews[0] || {
-      id: "mock-review-id",
-      title: "Sample Review",
-      source: "Literary Journal",
-      date: "2023-05-15",
-      summary: "This is a sample review summary.",
-      link: "https://example.com/review"
-    };
-    
-    // Get a random social post
-    const topSocial = mockSocialPosts[0] || {
-      id: "mock-social-id",
-      title: "Sample Social Post",
-      source: "Twitter",
-      date: "2023-05-20",
-      summary: "This is a sample social post summary.",
-      link: "https://example.com/social"
-    };
-    
-    // Prepare the response
+    // Create a mock recommendation response
     const response: RecommendationResponse = {
-      top_book: topBook,
-      top_review: topReview,
-      top_social: topSocial,
-      recommendations: books.slice(1, 11) // Take up to 10 additional recommendations
+      top_book: books[0],
+      top_review: mockReviews[0],
+      top_social: mockSocialPosts[0],
+      recommendations: books,
+      trending: [
+        {
+          title: 'Rising popularity of literary fiction',
+          source: 'Book Trends',
+          url: 'https://example.com/trends/literary-fiction'
+        },
+        {
+          title: 'New releases this month',
+          source: 'Publisher Weekly',
+          url: 'https://example.com/new-releases'
+        }
+      ],
+      contextual_insights: {
+        thematic_connections: [
+          'Exploration of identity',
+          'Moral ambiguity',
+          'Social commentary'
+        ],
+        cultural_context: [
+          'Post-modern literature',
+          'Contemporary fiction'
+        ],
+        reading_pathways: [
+          'Start with classic works',
+          'Explore similar themes in different genres'
+        ],
+        critical_reception: [
+          'Widely acclaimed by critics',
+          'Controversial among traditional readers'
+        ],
+        academic_relevance: [
+          'Frequently studied in contemporary literature courses'
+        ],
+        analysis: 'These works represent a significant contribution to modern literature, challenging conventional narratives while exploring universal themes.'
+      },
+      literary_analysis: 'The selected works demonstrate a sophisticated approach to narrative structure, with complex character development and thematic depth.'
     };
     
-    console.log('Mock response prepared:', response);
     return response;
   } catch (error) {
-    console.error('Error in mock recommendations:', error);
-    throw error;
+    console.error('Error generating mock recommendations:', error);
+    
+    // Return a minimal valid response if everything fails
+    return {
+      recommendations: []
+    };
   }
 }

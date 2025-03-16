@@ -1,5 +1,5 @@
-
 import { toast } from "@/components/ui/use-toast";
+import { RecommendationResponse } from "@/types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const API_KEY = import.meta.env.VITE_API_KEY;
@@ -68,5 +68,23 @@ export const apiService = {
       headers,
       body: data,
     });
+  }
+};
+
+/**
+ * Gets book recommendations from the Alexandria API
+ * @param searchTerm - The book title, author, or subject to search for
+ * @returns Promise containing the recommendation response
+ */
+export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
+  try {
+    return await apiService.post('/api/recommendations', {
+      user_id: 'frontend-user',
+      search_term: searchTerm,
+      max_results: 5
+    });
+  } catch (error) {
+    console.error('Error fetching recommendations from API:', error);
+    throw error;
   }
 };
