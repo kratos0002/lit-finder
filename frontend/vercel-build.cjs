@@ -215,11 +215,12 @@ esbuild.build({
 });
       `.trim();
       
-      const esbuildJsPath = path.join(process.cwd(), 'esbuild-script.js');
+      // Use .cjs extension for CommonJS script to avoid module type mismatch
+      const esbuildJsPath = path.join(process.cwd(), 'esbuild-script.cjs');
       fs.writeFileSync(esbuildJsPath, esbuildJsContent);
       
-      // Run the esbuild script
-      runCommand('node esbuild-script.js');
+      // Run the esbuild script with the correct extension
+      runCommand('node esbuild-script.cjs');
       
       // Write the index.html
       fs.writeFileSync(indexHtmlPath, updatedHtml);
@@ -238,17 +239,50 @@ esbuild.build({
     } catch (e) {
       console.error('⚠️ esbuild bundling failed, falling back to simpler approach...', e);
       
-      // If everything else fails, create a minimal working app
-      console.log('🔄 Creating minimal app from scratch...');
-      
-      // Remove the previous files
-      if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
-        fs.rmSync(path.join(process.cwd(), 'dist'), { recursive: true, force: true });
-        fs.mkdirSync(path.join(process.cwd(), 'dist'));
-      }
-      
-      // Create a super simple React app without any dependencies
-      const minimalAppHtml = `
+      // Try an alternative bundling approach
+      console.log('🔄 Trying alternative bundling approach with external esbuild binary...');
+      try {
+        // Create a direct esbuild command with all the arguments
+        const apiBaseUrl = envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
+        const apiKey = envVars.VITE_API_KEY || '';
+        
+        // Create a plugin script to handle path aliases
+        const pathAliasScript = `
+module.exports = {
+  name: 'path-alias',
+  setup(build) {
+    // Intercept import paths starting with @/
+    build.onResolve({ filter: /^@\// }, args => {
+      // Map @/ to src/
+      const newPath = args.path.replace(/^@\//, './src/');
+      return { path: newPath, resolveDir: '${process.cwd()}' };
+    });
+  }
+};
+        `.trim();
+        
+        const pathAliasPath = path.join(process.cwd(), 'path-alias-plugin.cjs');
+        fs.writeFileSync(pathAliasPath, pathAliasScript);
+        
+        // Use the esbuild CLI directly with environment variables as literals
+        runCommand(`npx esbuild src/main.tsx --bundle --define:import.meta.env.VITE_API_BASE_URL='"${apiBaseUrl}"' --define:import.meta.env.VITE_API_KEY='"${apiKey}"' --define:process.env.NODE_ENV='"production"' --format=esm --target=es2020 --outfile=dist/index.js --sourcemap --resolve-extensions=.tsx,.ts,.jsx,.js,.json --inject:${pathAliasPath}`);
+        
+        fs.writeFileSync(indexHtmlPath, updatedHtml);
+        console.log('✅ Built with direct esbuild command!');
+      } catch (directError) {
+        console.error('⚠️ Direct esbuild command failed, falling back to minimal app:', directError);
+        
+        // If everything else fails, create a minimal working app
+        console.log('🔄 Creating minimal app from scratch...');
+        
+        // Remove the previous files
+        if (fs.existsSync(path.join(process.cwd(), 'dist'))) {
+          fs.rmSync(path.join(process.cwd(), 'dist'), { recursive: true, force: true });
+          fs.mkdirSync(path.join(process.cwd(), 'dist'));
+        }
+        
+        // Create a super simple React app without any dependencies
+        const minimalAppHtml = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -317,10 +351,11 @@ esbuild.build({
     </div>
   </body>
 </html>
-      `.trim();
-      
-      fs.writeFileSync(path.join(process.cwd(), 'dist/index.html'), minimalAppHtml);
-      console.log('✅ Created minimal app as fallback!');
+        `.trim();
+        
+        fs.writeFileSync(path.join(process.cwd(), 'dist/index.html'), minimalAppHtml);
+        console.log('✅ Created minimal app as fallback!');
+      }
     }
     
     console.log('✅ Custom build completed successfully!');
