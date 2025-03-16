@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => ({
     target: 'esnext',
     outDir: 'dist',
     assetsDir: 'assets',
+    // Explicitly use JavaScript version to avoid native binaries
     rollupOptions: {
       onwarn(warning, warn) {
         // Ignore circular dependency warnings
@@ -45,5 +46,10 @@ export default defineConfig(({ mode }) => ({
         warn(warning);
       }
     }
+  },
+  // Force disable native Node.js addons
+  define: {
+    'process.env.ROLLUP_NATIVE': 'false',
+    'process.env.VITE_SKIP_NATIVE': 'true'
   }
 }));
