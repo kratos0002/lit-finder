@@ -1,112 +1,93 @@
+# Alexandria Library (lit-finder)
 
-# Alexandria
-
-## About Alexandria
-
-Alexandria is a digital library inspired by the lost Library of Alexandria, designed to unveil literary treasures through AI-powered recommendations. Our platform curates trending news, social posts, and articles based on your reading habits, creating a personalized literary discovery experience.
+A literary recommendation engine powered by AI that helps users discover books based on their interests and preferences.
 
 ## Project Structure
 
-This repository is organized as a monorepo with the following structure:
+This project is organized with a clean separation between frontend and backend:
 
-- `/frontend`: The React-based web application
-- `/backend`: The Alexandria recommendation engine API (FastAPI)
+```
+lit-finder/
+├── frontend/     # React frontend application
+│   ├── src/      # Source code for the frontend
+│   ├── public/   # Static assets
+│   └── ...       # Configuration files
+├── backend/      # Python FastAPI backend
+│   ├── app/      # Main application code
+│   ├── tests/    # Backend tests
+│   └── ...       # Configuration files
+└── README.md     # Project documentation
+```
 
 ## Features
 
-- **Book Recommendations**: AI-powered recommendations based on your interests and reading history
-- **My Scrolls**: Save and organize your favorite literary works
-- **Category Exploration**: Browse and filter through various literary categories
-- **Librarian's Ledger**: View your reading statistics and analytics
-- **Natural Language Search**: Find books using conversational language like "science fiction with AI themes"
-- **Current Scrolls**: Discover trending content related to literature and reading
+- Book search and discovery based on natural language queries
+- AI-powered recommendations using multiple models
+- Literary analysis and comparison
+- Beautiful dark-themed UI with elegant typography
+- User reading lists and preferences
 
 ## Getting Started
 
-### Frontend
+### Backend Setup
 
-To run the frontend locally:
+1. Navigate to the backend directory:
+   ```
+   cd backend
+   ```
 
-```sh
-# Navigate to the frontend directory
-cd frontend
+2. Create a virtual environment and activate it:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-# Install dependencies
-npm i
+3. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-# Start the development server
-npm run dev
-```
+4. Create a `.env` file based on `.env.example` and add your API keys.
 
-### Backend
+5. Run the development server:
+   ```
+   uvicorn app.main:app --reload
+   ```
 
-To run the recommendation engine API:
+### Frontend Setup
 
-```sh
-# Navigate to the backend directory
-cd backend
+1. Navigate to the frontend directory:
+   ```
+   cd frontend
+   ```
 
-# Create a virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
+3. Create a `.env` file based on `.env.example` and configure it.
 
-# Set up your .env file
-cp .env.example .env
-# Edit the .env file with your API keys
-
-# Start the API server
-uvicorn app.main:app --reload
-```
-
-## API Documentation
-
-The recommendation engine API provides the following main endpoints:
-
-- `GET /api/health`: Check API health status
-- `GET /api/stats`: Get API usage statistics
-- `POST /api/recommendations`: Get book recommendations
-
-For full documentation, run the API server and visit `http://localhost:8000/docs`
-
-## Tech Stack
-
-Alexandria is built with modern technologies:
-
-### Frontend
-- React
-- TypeScript
-- Tailwind CSS
-- shadcn/ui Components
-- Supabase for backend functionality
-
-### Backend
-- FastAPI
-- Python
-- Multiple AI services:
-  - OpenAI GPT-3.5
-  - Claude 3.5 Sonnet
-  - Perplexity Sonar
-
-## Development
-
-This project uses Vite for frontend development and FastAPI for the backend. After running the dev servers, you'll have access to hot-module replacement and instant previews of your changes.
+4. Start the development server:
+   ```
+   npm run dev
+   ```
 
 ## Deployment
 
-The project is set up for deployment with:
+- Backend: Deployed on Render
+- Frontend: Deployed on Vercel
 
-- Frontend: Vercel, Netlify, or any static hosting service
-- Backend: Render, Railway, or any Python hosting service
+## Technologies Used
 
-Make sure to set the appropriate environment variables in your deployment environment.
+- **Frontend**: React, TypeScript, Tailwind CSS, Vite
+- **Backend**: Python, FastAPI, Pydantic
+- **AI Integration**: OpenAI API, Claude AI, Perplexity
 
 ## Contributing
 
-Contributions to Alexandria are welcome! Please feel free to submit pull requests or open issues to improve the platform.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[MIT License](LICENSE)
+This project is licensed under the MIT License - see the LICENSE file for details.
