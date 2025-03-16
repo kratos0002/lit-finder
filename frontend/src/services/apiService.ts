@@ -1,4 +1,3 @@
-
 import { RecommendationResponse } from "@/types";
 
 // Add type definition for window.ENV
@@ -23,9 +22,12 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       import.meta.env.VITE_API_BASE_URL || 
       'https://alexandria-api.onrender.com';
     
+    // TEMPORARY: Hard-coded API key for testing
+    // TODO: REMOVE THIS BEFORE PRODUCTION
     const apiKey = 
       (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
-      import.meta.env.VITE_API_KEY;
+      import.meta.env.VITE_API_KEY || 
+      'alexandria-dev-3245'; // Direct API key for testing
     
     const url = `${apiBaseUrl}/api/recommendations`;
     
@@ -184,9 +186,12 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
       import.meta.env.VITE_API_BASE_URL || 
       'https://alexandria-api.onrender.com';
     
+    // TEMPORARY: Hard-coded API key for testing
+    // TODO: REMOVE THIS BEFORE PRODUCTION
     const apiKey = 
       (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
-      import.meta.env.VITE_API_KEY;
+      import.meta.env.VITE_API_KEY || 
+      'alexandria-dev-3245'; // Direct API key for testing
     
     const url = `${apiBaseUrl}/api/trending`;
     
