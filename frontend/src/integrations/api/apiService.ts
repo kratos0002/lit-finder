@@ -4,6 +4,11 @@ import { RecommendationResponse } from "@/types";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
+// Log API configuration on startup (for debugging)
+console.log('API Configuration:');
+console.log(`- Base URL: ${API_BASE_URL}`);
+console.log(`- API Key: ${API_KEY ? '✓ Set' : '✗ Not set'}`);
+
 interface FetchOptions {
   method?: string;
   headers?: Record<string, string>;
@@ -27,7 +32,13 @@ export const apiService = {
       // Add API key if available
       if (API_KEY) {
         headers['X-API-Key'] = API_KEY;
+        console.log('Using API Key for request');
+      } else {
+        console.warn('No API Key found in environment variables');
       }
+      
+      console.log(`Making request to: ${API_BASE_URL}${endpoint}`);
+      console.log('Request headers:', headers);
       
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: options.method || 'GET',
@@ -37,6 +48,7 @@ export const apiService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        console.error('API Error:', errorData || response.statusText);
         throw new Error(errorData?.message || `API request failed with status ${response.status}`);
       }
       
@@ -78,10 +90,13 @@ export const apiService = {
  */
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
   try {
+    console.log(`Requesting recommendations for: "${searchTerm}"`);
+    
     return await apiService.post('/api/recommendations', {
-      user_id: 'frontend-user',
+      user_id: 'web_user_' + Math.random().toString(36).substring(2, 10), // Generate random user ID
       search_term: searchTerm,
-      max_results: 5
+      history: [], // Add empty history
+      feedback: [] // Add empty feedback
     });
   } catch (error) {
     console.error('Error fetching recommendations from API:', error);

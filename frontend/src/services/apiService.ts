@@ -1,4 +1,3 @@
-
 import { RecommendationResponse } from "@/types";
 
 // This service handles API calls to the render/recommend endpoint
@@ -10,6 +9,11 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
     const apiKey = import.meta.env.VITE_API_KEY;
     const url = `${apiBaseUrl}/api/recommendations`;
+    
+    // Log API configuration on startup (for debugging)
+    console.log('API Configuration:');
+    console.log(`- Base URL: ${apiBaseUrl}`);
+    console.log(`- API Key: ${apiKey ? '✓ Set' : '✗ Not set'}`);
     
     // Prepare the request payload
     const payload = {

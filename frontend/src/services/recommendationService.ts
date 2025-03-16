@@ -1,6 +1,5 @@
-
 import { RecommendationResponse } from "@/types";
-import { getRecommendations as apiGetRecommendations } from "@/services/apiService";
+import { getRecommendations as apiGetRecommendations } from "@/integrations/api/apiService";
 import { mockReviews, mockSocialPosts } from "@/data/mockData";
 import { searchBooks } from "@/services/bookService";
 
