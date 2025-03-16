@@ -6,11 +6,32 @@ import { CalendarDays, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InsightCardProps {
-  item: Review | SocialPost;
+  item: Review | SocialPost | null;
   type: "review" | "social";
 }
 
 export function InsightCard({ item, type }: InsightCardProps) {
+  // Early return with a placeholder if item is null or undefined
+  if (!item) {
+    return (
+      <Card className="overflow-hidden h-full border-border/50 hover:shadow-lg transition-all duration-300">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
+            <span>No data available</span>
+          </div>
+          
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+            {type === "review" ? "No review available" : "No social post available"}
+          </h3>
+          
+          <p className="text-sm line-clamp-3 text-foreground/80 mb-4">
+            We couldn't find any {type === "review" ? "reviews" : "social posts"} for this book.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="overflow-hidden h-full border-border/50 hover:shadow-lg transition-all duration-300">
       <CardContent className="p-4">
