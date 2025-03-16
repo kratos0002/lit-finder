@@ -1,5 +1,4 @@
 import React, { ReactNode, useState } from "react";
-import { HomeIcon, ListIcon, XIcon, BookIcon, LibraryIcon } from "lucide-react";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -15,10 +14,46 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
   const currentPath = window.location.pathname;
 
   const navigation = [
-    { name: "Discover", icon: HomeIcon, href: "/" },
-    { name: "My Scrolls", icon: BookIcon, href: "/my-books" },
-    { name: "Categories", icon: BookIcon, href: "/category" },
-    { name: "Librarian's Ledger", icon: LibraryIcon, href: "/analytics" },
+    { 
+      name: "Discover", 
+      icon: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      ), 
+      href: "/" 
+    },
+    { 
+      name: "My Scrolls", 
+      icon: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+        </svg>
+      ), 
+      href: "/my-books" 
+    },
+    { 
+      name: "Categories", 
+      icon: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+          <rect width="9" height="9" x="2" y="2" rx="2"></rect>
+          <rect width="9" height="9" x="13" y="2" rx="2"></rect>
+          <rect width="9" height="9" x="2" y="13" rx="2"></rect>
+          <rect width="9" height="9" x="13" y="13" rx="2"></rect>
+        </svg>
+      ), 
+      href: "/category" 
+    },
+    { 
+      name: "Librarian's Ledger", 
+      icon: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+      ), 
+      href: "/analytics" 
+    },
   ];
 
   const toggleSidebar = () => {
@@ -38,7 +73,12 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
         <div className="h-full flex flex-col gap-y-5 overflow-y-auto border-r border-gray-800/50 bg-[#2b2b2b] px-4 py-6">
           <div className="flex items-center justify-between">
             <a href="/" className="flex items-center gap-x-2.5">
-              <LibraryIcon className="w-7 h-7 text-[#d4af37]" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7 text-[#d4af37]">
+                <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                <path d="M7 7v10"></path>
+                <path d="M11 7v10"></path>
+                <path d="m15 7 2 10"></path>
+              </svg>
               <span className="text-xl font-serif font-semibold text-gradient text-[#d4af37]">
                 Alexandria
               </span>
@@ -47,7 +87,10 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
               className="md:hidden text-white p-2"
               onClick={toggleSidebar}
             >
-              <XIcon className="w-5 h-5" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
             </button>
           </div>
 
@@ -75,7 +118,7 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
                         : "text-white/80 hover:bg-[#3a3a3a]/20 hover:text-white"
                     )}
                   >
-                    <item.icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                    <item.icon />
                     {item.name}
                   </a>
                 </li>
@@ -92,7 +135,11 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
             className="md:hidden mr-2 text-white p-2"
             onClick={toggleSidebar}
           >
-            <ListIcon className="w-5 h-5" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <line x1="4" x2="20" y1="12" y2="12"></line>
+              <line x1="4" x2="20" y1="6" y2="6"></line>
+              <line x1="4" x2="20" y1="18" y2="18"></line>
+            </svg>
           </button>
           
           <div className="w-full max-w-md mx-auto">

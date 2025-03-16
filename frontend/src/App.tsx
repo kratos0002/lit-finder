@@ -28,7 +28,7 @@ function App() {
         {!searchTerm ? (
           <div className="space-y-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-serif font-bold mb-3 text-gradient">Discover Your Next Literary Journey</h1>
+              <h1 className="text-3xl font-serif font-bold mb-3 bg-gradient-to-r from-[#d4af37] to-purple-400 bg-clip-text text-transparent">Discover Your Next Literary Journey</h1>
               <p className="text-gray-300">Our intelligent recommendation engine suggests books tailored to your interests.</p>
             </div>
             
