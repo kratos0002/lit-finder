@@ -52,7 +52,9 @@ export function Search({ onResultsReceived }: SearchProps) {
         setResults(response);
         
         // Determine if we're showing API or fallback results
-        if (response.recommendations[0]?.source === 'fallback') {
+        // Using type assertion since 'source' might exist at runtime but isn't in the type definition
+        const firstBook = response.recommendations[0] as any;
+        if (firstBook && firstBook.source === 'fallback') {
           setResultSource('fallback');
         } else {
           setResultSource('api');

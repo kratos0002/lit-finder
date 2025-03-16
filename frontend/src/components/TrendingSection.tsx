@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { TrendingCard, TrendingItem } from "./TrendingCard";
 import { Button } from "@/components/ui/button";
@@ -72,7 +71,9 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
       // Check if user is authenticated
       const { data: session } = await supabase.auth.getSession();
       
-      if (session?.session?.user) {
+      // Using type assertion to handle the session user
+      const sessionData = session as any;
+      if (sessionData?.session?.user) {
         // In the real implementation, save to Supabase
         // For now, just update local state
         if (!savedItems.some(savedItem => savedItem.id === item.id)) {
