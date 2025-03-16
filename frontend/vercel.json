@@ -1,4 +1,3 @@
-
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
@@ -6,5 +5,25 @@
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install --no-optional"
+  "installCommand": "npm install --no-optional",
+  "github": {
+    "silent": true
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, s-maxage=86400" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(jpg|jpeg|png|gif|webp|svg|ico|css|js)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800, s-maxage=31536000" }
+      ]
+    }
+  ]
 }
