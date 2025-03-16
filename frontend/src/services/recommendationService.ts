@@ -1,5 +1,6 @@
+
 import { RecommendationResponse } from "@/types";
-import { getRecommendations as apiGetRecommendations } from "@/integrations/api/apiService";
+import { getRecommendations as apiGetRecommendations } from "@/services/apiService";
 import { mockReviews, mockSocialPosts } from "@/data/mockData";
 import { searchBooks } from "@/services/bookService";
 
@@ -9,7 +10,22 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     console.log('Attempting to get recommendations from API for:', searchTerm);
     
     // First try the actual API
-    return await apiGetRecommendations(searchTerm);
+    const apiResponse = await apiGetRecommendations(searchTerm);
+    
+    // If the API returned a valid response with recommendations, return it
+    if (apiResponse && apiResponse.recommendations && apiResponse.recommendations.length > 0) {
+      console.log('Successfully received API recommendations');
+      return apiResponse;
+    }
+    
+    // If API returned empty array but a valid response, return it with a message
+    if (apiResponse && (!apiResponse.recommendations || apiResponse.recommendations.length === 0)) {
+      console.log('API returned no recommendations, using fallback');
+      return await getMockRecommendations(searchTerm);
+    }
+    
+    // If we get here, something went wrong with the API response
+    throw new Error('Invalid API response format');
   } catch (error) {
     console.error('API recommendation request failed, using fallback:', error);
     
@@ -27,57 +43,90 @@ async function getMockRecommendations(searchTerm: string): Promise<Recommendatio
     const books = await searchBooks(searchTerm);
     console.log('Found books:', books);
     
-    // Create a mock recommendation response
-    const response: RecommendationResponse = {
-      top_book: books[0],
-      top_review: mockReviews[0],
-      top_social: mockSocialPosts[0],
-      recommendations: books,
-      trending: [
-        {
-          title: 'Rising popularity of literary fiction',
-          source: 'Book Trends',
-          url: 'https://example.com/trends/literary-fiction'
-        },
-        {
-          title: 'New releases this month',
-          source: 'Publisher Weekly',
-          url: 'https://example.com/new-releases'
-        }
-      ],
-      contextual_insights: {
-        thematic_connections: [
-          'Exploration of identity',
-          'Moral ambiguity',
-          'Social commentary'
-        ],
-        cultural_context: [
-          'Post-modern literature',
-          'Contemporary fiction'
-        ],
-        reading_pathways: [
-          'Start with classic works',
-          'Explore similar themes in different genres'
-        ],
-        critical_reception: [
-          'Widely acclaimed by critics',
-          'Controversial among traditional readers'
-        ],
-        academic_relevance: [
-          'Frequently studied in contemporary literature courses'
-        ],
-        analysis: 'These works represent a significant contribution to modern literature, challenging conventional narratives while exploring universal themes.'
-      },
-      literary_analysis: 'The selected works demonstrate a sophisticated approach to narrative structure, with complex character development and thematic depth.'
+    // Sort by match score
+    books.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    
+    // Get the top book
+    const topBook = books[0] || {
+      id: "mock-id",
+      title: "Sample Book",
+      author: "Sample Author",
+      coverImage: "https://source.unsplash.com/400x600/?book,novel",
+      description: "This is a sample book description.",
+      summary: "This is a sample book summary.",
+      category: "Novel",
+      matchScore: 85,
+      publicationDate: "2023",
+      source: "fallback"
     };
     
+    // Get a random review
+    const topReview = mockReviews[0] || {
+      id: "mock-review-id",
+      title: "Sample Review",
+      source: "Literary Journal",
+      date: "2023-05-15",
+      summary: "This is a sample review summary.",
+      link: "https://example.com/review"
+    };
+    
+    // Get a random social post
+    const topSocial = mockSocialPosts[0] || {
+      id: "mock-social-id",
+      title: "Sample Social Post",
+      source: "Twitter",
+      date: "2023-05-20",
+      summary: "This is a sample social post summary.",
+      link: "https://example.com/social"
+    };
+    
+    // Mark all books explicitly as fallback source
+    const fallbackBooks = books.map(book => ({
+      ...book,
+      source: "fallback" as const
+    }));
+    
+    // Prepare the response
+    const response: RecommendationResponse = {
+      top_book: {...topBook, source: "fallback"},
+      top_review: topReview,
+      top_social: topSocial,
+      recommendations: fallbackBooks.length > 0 ? fallbackBooks.slice(0, 10) : [topBook]
+    };
+    
+    console.log('Mock response prepared:', response);
     return response;
   } catch (error) {
-    console.error('Error generating mock recommendations:', error);
+    console.error('Error in mock recommendations:', error);
     
-    // Return a minimal valid response if everything fails
+    // If even the fallback fails, return a minimal valid response
     return {
-      recommendations: []
+      top_book: {
+        id: "fallback-id",
+        title: `Books about ${searchTerm}`,
+        author: "Unknown Author",
+        coverImage: "https://source.unsplash.com/400x600/?book,novel",
+        description: "We couldn't find specific books matching your search.",
+        summary: "We couldn't find specific books matching your search.",
+        category: "Unknown",
+        matchScore: 50,
+        publicationDate: "Unknown",
+        source: "fallback"
+      },
+      recommendations: [{
+        id: "fallback-id",
+        title: `Books about ${searchTerm}`,
+        author: "Unknown Author",
+        coverImage: "https://source.unsplash.com/400x600/?book,novel",
+        description: "We couldn't find specific books matching your search.",
+        summary: "We couldn't find specific books matching your search.",
+        category: "Unknown",
+        matchScore: 50,
+        publicationDate: "Unknown",
+        source: "fallback"
+      }],
+      top_review: null,
+      top_social: null
     };
   }
 }
