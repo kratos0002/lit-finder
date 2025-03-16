@@ -1,13 +1,31 @@
 import { RecommendationResponse } from "@/types";
 
+// Add type definition for window.ENV
+declare global {
+  interface Window {
+    ENV?: {
+      VITE_API_BASE_URL?: string;
+      VITE_API_KEY?: string;
+    };
+  }
+}
+
 // This service handles API calls to the render/recommend endpoint
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
   console.log('API service: Getting recommendations for:', searchTerm);
   
   try {
     // Get API base URL from environment variables
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
-    const apiKey = import.meta.env.VITE_API_KEY;
+    // First check window.ENV (from vercel-build.cjs), then import.meta.env
+    const apiBaseUrl = 
+      (typeof window !== 'undefined' && window.ENV?.VITE_API_BASE_URL) || 
+      import.meta.env.VITE_API_BASE_URL || 
+      'https://alexandria-api.onrender.com';
+    
+    const apiKey = 
+      (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
+      import.meta.env.VITE_API_KEY;
+    
     const url = `${apiBaseUrl}/api/recommendations`;
     
     // Log API configuration on startup (for debugging)
@@ -160,8 +178,15 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
   
   try {
     // Get API base URL from environment variables
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
-    const apiKey = import.meta.env.VITE_API_KEY;
+    const apiBaseUrl = 
+      (typeof window !== 'undefined' && window.ENV?.VITE_API_BASE_URL) || 
+      import.meta.env.VITE_API_BASE_URL || 
+      'https://alexandria-api.onrender.com';
+    
+    const apiKey = 
+      (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
+      import.meta.env.VITE_API_KEY;
+    
     const url = `${apiBaseUrl}/api/trending`;
     
     // Prepare headers with API key
