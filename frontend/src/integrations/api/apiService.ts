@@ -1,7 +1,9 @@
+
 import { toast } from "@/components/ui/use-toast";
 import { RecommendationResponse } from "@/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+// Get API configuration from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
 const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Log API configuration on startup (for debugging)
