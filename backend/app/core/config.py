@@ -1,3 +1,4 @@
+
 import os
 from typing import List, Optional, Dict, Any
 from pydantic import field_validator, Field
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
     GOODREADS_API_KEY: Optional[str] = None
     LIBRARYTHING_API_KEY: Optional[str] = None
     GROK_API_KEY: Optional[str] = None  # Added Grok API key
+    API_KEY: Optional[str] = None  # API key for client authentication
     
     # Test settings
     USE_REAL_APIS: bool = False  # Flag to indicate if real APIs should be used in tests
@@ -49,7 +51,7 @@ class Settings(BaseSettings):
     CLAUDE_MODEL: str = "claude-3-5-sonnet-20240620"  # Corrected format: dash instead of period
     PERPLEXITY_MODEL: str = "sonar"
     
-    @field_validator("OPENAI_API_KEY", "PERPLEXITY_API_KEY", "CLAUDE_API_KEY", "GROK_API_KEY", mode="before")
+    @field_validator("OPENAI_API_KEY", "PERPLEXITY_API_KEY", "CLAUDE_API_KEY", "GROK_API_KEY", "API_KEY", mode="before")
     @classmethod
     def check_api_keys(cls, v, info):
         if not v:
@@ -67,3 +69,7 @@ settings = Settings()
 # Print a warning if essential API keys are missing
 if not all([settings.OPENAI_API_KEY, settings.PERPLEXITY_API_KEY, settings.CLAUDE_API_KEY]):
     logger.warning("One or more essential API keys are missing. Some features may not work correctly.")
+
+# Print a warning if API_KEY is not set (needed for client authentication)
+if not settings.API_KEY:
+    logger.warning("API_KEY is not set. API authentication will not be available.")

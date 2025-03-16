@@ -26,17 +26,17 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     console.log('Sending request to:', url);
     console.log('With payload:', payload);
     
-    // Prepare headers
+    // Prepare headers with API key
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     
-    // Add API key if available (using X-API-Key header)
+    // Add API key header if available
     if (apiKey) {
+      console.log('Using API key for authentication');
       headers['X-API-Key'] = apiKey;
-      console.log('Using API Key for request');
     } else {
-      console.warn('No API Key found in environment variables');
+      console.warn('No API key found in environment variables');
     }
     
     // Make the actual API call
