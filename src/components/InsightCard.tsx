@@ -2,7 +2,7 @@
 import { Review, SocialPost } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, ExternalLink } from "lucide-react";
+import { CalendarDays, ExternalLink, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InsightCardProps {
@@ -17,6 +17,7 @@ export function InsightCard({ item, type }: InsightCardProps) {
       <Card className="overflow-hidden h-full border-border/50 hover:shadow-lg transition-all duration-300">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
+            <AlertCircle className="w-3 h-3" />
             <span>No data available</span>
           </div>
           
