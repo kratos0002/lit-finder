@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search } from './components/Search';
 import { TrendingSection } from './components/TrendingSection';
@@ -24,7 +23,7 @@ function App() {
   };
 
   return (
-    <MainLayout onSearch={handleSearch}>
+    <MainLayout>
       <div className="max-w-6xl mx-auto">
         {!searchTerm ? (
           <div className="space-y-8">

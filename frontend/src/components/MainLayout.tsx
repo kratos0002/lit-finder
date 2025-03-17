@@ -1,15 +1,13 @@
-
 import React, { ReactNode, useState } from "react";
 
 interface MainLayoutProps {
   children: ReactNode;
-  onSearch?: (query: string) => void;
 }
 
 // Import the necessary components or define simple versions
 const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
 
-export function MainLayout({ children, onSearch }: MainLayoutProps) {
+export function MainLayout({ children }: MainLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   // Get current path for navigation highlighting
   const currentPath = window.location.pathname;
@@ -143,22 +141,15 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
             </svg>
           </button>
           
-          <div className="w-full max-w-md mx-auto">
-            {onSearch && (
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="What literary treasure would you seek in Alexandria?"
-                  className="w-full bg-[#3a3a3a] text-white border-none rounded-full px-4 py-2"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && onSearch) {
-                      onSearch((e.target as HTMLInputElement).value);
-                    }
-                  }}
-                />
-              </div>
-            )}
+          {/* Logo for the center of the header */}
+          <div className="flex-1 flex items-center justify-center">
+            <h1 className="text-2xl font-serif font-bold bg-gradient-to-r from-[#d4af37] to-purple-400 bg-clip-text text-transparent">
+              Alexandria
+            </h1>
           </div>
+          
+          {/* Empty div for balance */}
+          <div className="w-10"></div>
         </header>
 
         <main className="flex-1 py-8 px-4 md:px-6 bg-[#1d1e20] text-white">
