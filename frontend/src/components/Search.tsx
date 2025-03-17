@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getRecommendations } from "@/services/recommendationService";
 import { Book, RecommendationResponse } from "@/types";
 import { toast } from "@/components/ui/use-toast";
@@ -9,14 +9,23 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SearchProps {
   onResultsReceived?: (results: RecommendationResponse) => void;
+  searchTerm?: string; // Make it optional to maintain backward compatibility
 }
 
-export function Search({ onResultsReceived }: SearchProps) {
-  const [searchTerm, setSearchTerm] = useState<string>("");
+export function Search({ onResultsReceived, searchTerm: initialSearchTerm }: SearchProps) {
+  const [searchTerm, setSearchTerm] = useState<string>(initialSearchTerm || "");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RecommendationResponse | null>(null);
   const [resultSource, setResultSource] = useState<"api" | "fallback" | null>(null);
+
+  // Automatically trigger search when initialSearchTerm is provided
+  useEffect(() => {
+    if (initialSearchTerm && initialSearchTerm.trim()) {
+      console.log('Search: Automatically searching for:', initialSearchTerm);
+      handleSearch({ preventDefault: () => {} } as React.FormEvent);
+    }
+  }, [initialSearchTerm]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

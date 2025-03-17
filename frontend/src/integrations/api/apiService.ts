@@ -1,5 +1,6 @@
 import { toast } from "@/components/ui/use-toast";
 import { RecommendationResponse } from "@/types";
+import { logVersion } from "@/utils/debugTools";
 
 // Add type definition for window.ENV if it doesn't exist
 declare global {
@@ -10,6 +11,9 @@ declare global {
     };
   }
 }
+
+// API Integration Version - increment to force cache invalidation on deployment
+const API_INTEGRATION_VERSION = '1.0.1';
 
 // Get API configuration from environment variables
 const getApiKey = () => {
@@ -46,6 +50,9 @@ const API_BASE_URL = getApiBaseUrl();
 const API_KEY = getApiKey();
 
 // Log API configuration on startup (for debugging)
+console.log('==================================================');
+console.log(`API INTEGRATION SERVICE v${API_INTEGRATION_VERSION} - LOADED`);
+console.log('==================================================');
 console.log('API Integration Service Configuration:');
 console.log(`- Base URL: ${API_BASE_URL}`);
 console.log(`- API Key: ${API_KEY ? '✓ Set' : '✗ Not set'}`);

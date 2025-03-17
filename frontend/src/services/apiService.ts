@@ -1,6 +1,14 @@
 import { RecommendationResponse } from "@/types";
 import { apiService, getRecommendations as apiIntegrationGetRecommendations } from "@/integrations/api/apiService";
 
+// API Service Version - increment to force cache invalidation on deployment
+const API_SERVICE_VERSION = '1.0.1';
+
+// Log initialization for debugging
+console.log('==================================================');
+console.log(`API SERVICE WRAPPER v${API_SERVICE_VERSION} - LOADED`);
+console.log('==================================================');
+
 // Add type definition for window.ENV
 declare global {
   interface Window {
@@ -103,6 +111,9 @@ function getFallbackRecommendations(searchTerm: string): RecommendationResponse 
 
 // Function to get trending items - COMPLETELY ISOLATED MOCK IMPLEMENTATION 
 export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ items: any[] }> => {
+  console.log('==================================================');
+  console.log(`TRENDING ITEMS v${API_SERVICE_VERSION} - MOCK ONLY IMPLEMENTATION`);
+  console.log('==================================================');
   console.log('Getting mock trending items only (NO API CALLS):', searchHistory);
   
   // Never attempt to call any API endpoints - this is mock data only
