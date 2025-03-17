@@ -2,10 +2,9 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
-  "buildCommand": "npm run vercel-build",
-  "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "npm install --no-optional",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "github": {
     "silent": true
   },
