@@ -34,9 +34,14 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     // Log API configuration on startup (for debugging)
     console.log('API Configuration:');
     console.log(`- Base URL: ${apiBaseUrl}`);
-    console.log(`- API Key: ${apiKey ? '✓ Set' : '✗ Not set'}`);
-    console.log('- window.ENV:', typeof window !== 'undefined' ? window.ENV : 'Not in browser');
-    console.log('- import.meta.env.VITE_API_KEY exists:', !!import.meta.env.VITE_API_KEY);
+    // The issue is that empty strings evaluate to false in the ternary condition below
+    // So even if apiKey is set to an empty string, it shows as "Not set"
+    // Let's check for undefined or null instead
+    console.log(`- API Key: ${apiKey !== undefined && apiKey !== null && apiKey !== '' ? '✓ Set' : '✗ Not set'}`);
+    if (typeof window !== 'undefined') {
+      console.log('- window.ENV.VITE_API_KEY:', window.ENV?.VITE_API_KEY);
+    }
+    console.log('- import.meta.env.VITE_API_KEY:', import.meta.env.VITE_API_KEY);
     
     // Prepare the request payload
     const payload = {
@@ -182,29 +187,7 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
   console.log('Getting trending items with search history:', searchHistory);
   
   try {
-    // Since the trending endpoint doesn't exist yet, we'll use mock data
-    // Comment out the API call code for now
-    /*
-    // Get API base URL from environment variables
-    const apiBaseUrl = 
-      (typeof window !== 'undefined' && window.ENV?.VITE_API_BASE_URL) || 
-      import.meta.env.VITE_API_BASE_URL || 
-      'https://alexandria-api.onrender.com';
-    
-    // Get API key from environment variables - no hardcoded fallback
-    const apiKey = 
-      (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
-      import.meta.env.VITE_API_KEY || 
-      '';
-    
-    // Log environment variables for debugging
-    console.log('Environment in getTrendingItems:');
-    console.log('- window.ENV:', typeof window !== 'undefined' ? window.ENV : 'Not in browser');
-    console.log('- import.meta.env.VITE_API_KEY exists:', !!import.meta.env.VITE_API_KEY);
-    
-    const url = `${apiBaseUrl}/api/trending`;
-    */
-    
+    // DO NOT try to call the trending API endpoint - it doesn't exist
     // Instead, return mock trending items directly
     console.log('Using mock trending items since API endpoint is not available');
     return {
@@ -241,16 +224,16 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
   } catch (error) {
     console.error('Error in getTrendingItems:', error);
     
-    // Return fallback trending items
+    // Fallback trending items in case of any unexpected error
     return {
       items: [
         {
           id: "fallback-1",
-          title: "Discover New Authors",
-          description: "Explore emerging voices in literature",
-          category: "Discovery",
-          source: "fallback",
-          url: "https://example.com/new-authors",
+          title: "Fallback Trending Item",
+          description: "This is a fallback item shown when there's an error",
+          category: "Fallback",
+          source: "System",
+          url: "#",
           published_at: new Date().toISOString()
         }
       ]

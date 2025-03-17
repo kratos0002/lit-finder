@@ -291,6 +291,11 @@ export function parseAsync(code, options = {}) {
       });
       // Log environment variables for debugging
       console.log('Environment variables loaded in browser:');
+      console.log('- window.ENV.VITE_API_BASE_URL:', "${envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com'}");
+      console.log('- window.ENV.VITE_API_KEY:', "${envVars.VITE_API_KEY || ''}".substring(0, 6) + "..." + " (length: ${envVars.VITE_API_KEY ? envVars.VITE_API_KEY.length : 0})");
+      console.log('- API Key is defined:', "${!!envVars.VITE_API_KEY}");
+      console.log('- API Key is empty string:', "${envVars.VITE_API_KEY === ''}");
+      console.log('- API Key type:', "${typeof envVars.VITE_API_KEY}");
       console.log('- window.ENV:', window.ENV);
       console.log('- import.meta.env:', window.import.meta.env);
     </script>
