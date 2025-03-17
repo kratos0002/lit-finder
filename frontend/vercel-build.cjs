@@ -166,36 +166,38 @@ export function parseAsync(code, options = {}) {
     <meta name="color-scheme" content="dark">
     <link rel="stylesheet" href="./index.css">
     
-    <!-- Include Tailwind directly from CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Disable notifications -->
     <script>
-      tailwind.config = {
-        darkMode: ["class"],
-        theme: {
-          extend: {
-            colors: {
-              background: '#1d1e20',
-              foreground: '#ffffff',
-              primary: '#d4af37',
-              secondary: '#8e24aa',
-              border: '#2b2b2b'
-            },
-            fontFamily: {
-              serif: ['Crimson Pro', 'serif'],
-            },
-          }
-        }
+      // Immediately override the Notification API to prevent prompts
+      if (typeof Notification !== 'undefined') {
+        // Store the original
+        const OriginalNotification = Notification;
+        
+        // Override the Notification constructor to do nothing
+        window.Notification = function() { 
+          console.log("Notification constructor blocked");
+          return {}; 
+        };
+        
+        // Override permission properties
+        Object.defineProperty(window.Notification, 'permission', {
+          get: function() { return 'denied'; }
+        });
+        
+        // Override the requestPermission method
+        window.Notification.requestPermission = function() {
+          console.log("Notification permission request blocked");
+          return Promise.resolve('denied');
+        };
       }
     </script>
     
+    <!-- CSS for styling - no CDN, just inline styles -->
     <style>
-      /* Critical CSS for fallback */
-      :root {
-        --background: 230 14% 16%;
-        --foreground: 0 0% 100%;
-        --primary: 43 100% 52%;
-        --secondary: 285 65% 40%;
-      }
+      /* Base styles */
+      *, *::before, *::after { box-sizing: border-box; }
+      
+      /* Body styling */
       body {
         font-family: 'Crimson Pro', 'Garamond', 'Times New Roman', serif;
         background-color: #1d1e20;
@@ -203,14 +205,29 @@ export function parseAsync(code, options = {}) {
         margin: 0;
         padding: 0;
       }
+      
+      /* Essential styles */
       .text-gradient {
         background-image: linear-gradient(to right, #d4af37, #8e24aa);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
       }
-      h1, h2, h3, h4, h5, h6 {
-        font-family: 'Crimson Pro', serif;
+      
+      .container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      
+      .book-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      .book-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
       }
       
       .animate-fade-in {
@@ -228,56 +245,92 @@ export function parseAsync(code, options = {}) {
         }
       }
       
-      .container {
-        width: 100%;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 1rem;
+      /* Grid system */
+      .grid { display: grid; }
+      .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+      .gap-6 { gap: 1.5rem; }
+      
+      /* Flex utilities */
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .items-center { align-items: center; }
+      .justify-center { justify-content: center; }
+      .justify-between { justify-content: space-between; }
+      
+      /* Spacing */
+      .p-4 { padding: 1rem; }
+      .p-6 { padding: 1.5rem; }
+      .p-8 { padding: 2rem; }
+      .m-4 { margin: 1rem; }
+      .mx-auto { margin-left: auto; margin-right: auto; }
+      .my-4 { margin-top: 1rem; margin-bottom: 1rem; }
+      .mb-2 { margin-bottom: 0.5rem; }
+      .mb-4 { margin-bottom: 1rem; }
+      .mb-8 { margin-bottom: 2rem; }
+      .mt-4 { margin-top: 1rem; }
+      .mt-6 { margin-top: 1.5rem; }
+      .mt-12 { margin-top: 3rem; }
+      
+      /* Typography */
+      .text-center { text-align: center; }
+      .text-sm { font-size: 0.875rem; }
+      .text-xl { font-size: 1.25rem; }
+      .text-2xl { font-size: 1.5rem; }
+      .text-3xl { font-size: 1.875rem; }
+      .font-bold { font-weight: 700; }
+      .font-serif { font-family: 'Crimson Pro', serif; }
+      .text-primary { color: #d4af37; }
+      .text-white { color: white; }
+      .text-gray-300 { color: #d1d5db; }
+      .text-gray-400 { color: #9ca3af; }
+      
+      /* Sizing */
+      .w-full { width: 100%; }
+      .w-16 { width: 4rem; }
+      .h-16 { height: 4rem; }
+      .min-h-screen { min-height: 100vh; }
+      .max-w-4xl { max-width: 56rem; }
+      
+      /* Borders */
+      .rounded { border-radius: 0.25rem; }
+      .rounded-lg { border-radius: 0.5rem; }
+      .rounded-full { border-radius: 9999px; }
+      .border-none { border: none; }
+      .border-t-4 { border-top-width: 4px; }
+      .border-primary { border-color: #d4af37; }
+      
+      /* Backgrounds */
+      .bg-primary { background-color: #d4af37; }
+      .bg-\[\#2b2b2b\] { background-color: #2b2b2b; }
+      .bg-\[\#3a3a3a\] { background-color: #3a3a3a; }
+      .bg-\[\#1d1e20\] { background-color: #1d1e20; }
+      
+      /* Positioning */
+      .relative { position: relative; }
+      .absolute { position: absolute; }
+      .right-2 { right: 0.5rem; }
+      .top-2 { top: 0.5rem; }
+      
+      /* Effects */
+      .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+      .hover\:bg-opacity-80:hover { background-opacity: 0.8; }
+      .hover\:underline:hover { text-decoration: underline; }
+      
+      /* Animations */
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
       }
       
-      .bg-primary {
-        background-color: #d4af37;
+      /* Media queries */
+      @media (min-width: 768px) {
+        .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
-      
-      .text-white {
-        color: white;
-      }
-      
-      .rounded {
-        border-radius: 0.25rem;
-      }
-      
-      .p-4 {
-        padding: 1rem;
-      }
-      
-      .mt-4 {
-        margin-top: 1rem;
-      }
-      
-      .flex {
-        display: flex;
-      }
-      
-      .items-center {
-        align-items: center;
-      }
-      
-      .justify-center {
-        justify-content: center;
-      }
-      
-      .shadow-lg {
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-      }
-      
-      .book-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-      
-      .book-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      @media (min-width: 1024px) {
+        .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       }
     </style>
     <script>
@@ -480,11 +533,7 @@ function App() {
     console.log("Environment:", window.ENV);
     setTimeout(() => setLoading(false), 500); // Add slight delay to ensure styles load
     
-    // Explicitly disable notifications by setting permission to denied if possible
-    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-      console.log("Setting notification permission to denied");
-      // We don't actually request permissions, just log a message
-    }
+    // Don't do anything with notifications - not even logging
   }, []);
   
   if (loading) {
