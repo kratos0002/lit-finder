@@ -127,6 +127,8 @@ class PerplexityService:
                 else:
                     try:
                         content = responses[0].get("choices", [{}])[0].get("message", {}).get("content", "[]")
+                        # Extract JSON from markdown code blocks if needed
+                        content = self._extract_json_from_markdown(content)
                         book_items = json.loads(content)
                         logger.info(f"Retrieved {len(book_items)} book recommendations from Perplexity")
                     except (json.JSONDecodeError, KeyError, IndexError) as e:
@@ -138,6 +140,8 @@ class PerplexityService:
                 else:
                     try:
                         content = responses[1].get("choices", [{}])[0].get("message", {}).get("content", "[]")
+                        # Extract JSON from markdown code blocks if needed
+                        content = self._extract_json_from_markdown(content)
                         review_items = json.loads(content)
                         logger.info(f"Retrieved {len(review_items)} review recommendations from Perplexity")
                     except (json.JSONDecodeError, KeyError, IndexError) as e:
@@ -149,6 +153,8 @@ class PerplexityService:
                 else:
                     try:
                         content = responses[2].get("choices", [{}])[0].get("message", {}).get("content", "[]")
+                        # Extract JSON from markdown code blocks if needed
+                        content = self._extract_json_from_markdown(content)
                         social_items = json.loads(content)
                         logger.info(f"Retrieved {len(social_items)} social media recommendations from Perplexity")
                     except (json.JSONDecodeError, KeyError, IndexError) as e:
@@ -197,6 +203,43 @@ class PerplexityService:
         except Exception as e:
             logger.error(f"Error making Perplexity API request: {e}")
             return {}  # Return empty dict instead of raising
+
+    # Add a new helper function to extract JSON from markdown code blocks
+    def _extract_json_from_markdown(self, content: str) -> str:
+        """
+        Extract JSON from markdown code blocks.
+        
+        The Perplexity API sometimes returns JSON wrapped in markdown code blocks like:
+        ```json
+        [{"key": "value"}]
+        ```
+        
+        This function extracts the actual JSON content from such blocks.
+        """
+        logger.info("Checking if content contains a markdown code block")
+        
+        # Check if the content starts with a markdown code block
+        if content.strip().startswith("```"):
+            logger.info("Content contains a markdown code block, extracting JSON")
+            
+            # Extract the content between the code block markers
+            lines = content.strip().split("\n")
+            # Remove the opening code block marker
+            if len(lines) > 0:
+                lines.pop(0)
+            
+            # Remove the closing code block marker if present
+            if len(lines) > 0 and lines[-1].strip() == "```":
+                lines.pop()
+            
+            # Join the remaining lines to get the JSON content
+            extracted_content = "\n".join(lines)
+            logger.info(f"Extracted content (first 100 chars): {extracted_content[:100]}...")
+            
+            return extracted_content
+        
+        # If no code block is found, return the original content
+        return content
 
     async def get_literary_analysis(self, search_term: str) -> Dict[str, Any]:
         """
@@ -249,8 +292,10 @@ class PerplexityService:
                 if response:
                     try:
                         content = response.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+                        # Extract JSON from markdown code blocks if needed
+                        content = self._extract_json_from_markdown(content)
                         analysis_data = json.loads(content)
-                        logger.info(f"Retrieved literary analysis for {search_term}")
+                        logger.info(f"Retrieved literary analysis from Perplexity: {list(analysis_data.keys())}")
                         return analysis_data
                     except (json.JSONDecodeError, KeyError, IndexError) as e:
                         logger.error(f"Error parsing literary analysis: {e}")
