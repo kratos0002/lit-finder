@@ -70,7 +70,7 @@ class PerplexityService:
                             - source: The source of the review (publication name)
                             - date: Publication date of the review
                             - summary: A brief summary of the review content
-                            - link: A link to the review (can be fictional for mock data)
+                            - url: A link to the review (can be fictional for mock data)
                             
                             Return 2-3 reviews. Format as a valid JSON array only, with no additional text."""
                         },
@@ -94,7 +94,7 @@ class PerplexityService:
                             - source: The platform (X, Reddit, etc.)
                             - date: Post date
                             - summary: A brief summary of the post content
-                            - link: A link to the post (can be fictional for mock data)
+                            - url: A link to the post (can be fictional for mock data)
                             
                             Return 2-3 posts. Format as a valid JSON array only, with no additional text."""
                         },
@@ -143,6 +143,12 @@ class PerplexityService:
                         # Extract JSON from markdown code blocks if needed
                         content = self._extract_json_from_markdown(content)
                         review_items = json.loads(content)
+                        
+                        # Fix the field names if necessary (map 'link' to 'url')
+                        for item in review_items:
+                            if "link" in item and "url" not in item:
+                                item["url"] = item.pop("link")
+                        
                         logger.info(f"Retrieved {len(review_items)} review recommendations from Perplexity")
                     except (json.JSONDecodeError, KeyError, IndexError) as e:
                         logger.error(f"Error parsing review recommendations: {e}")
@@ -156,6 +162,12 @@ class PerplexityService:
                         # Extract JSON from markdown code blocks if needed
                         content = self._extract_json_from_markdown(content)
                         social_items = json.loads(content)
+                        
+                        # Fix the field names if necessary (map 'link' to 'url')
+                        for item in social_items:
+                            if "link" in item and "url" not in item:
+                                item["url"] = item.pop("link")
+                        
                         logger.info(f"Retrieved {len(social_items)} social media recommendations from Perplexity")
                     except (json.JSONDecodeError, KeyError, IndexError) as e:
                         logger.error(f"Error parsing social media recommendations: {e}")
