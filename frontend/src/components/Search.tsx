@@ -18,6 +18,34 @@ export function Search({ onResultsReceived, searchTerm: initialSearchTerm }: Sea
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<RecommendationResponse | null>(null);
   const [resultSource, setResultSource] = useState<"api" | "fallback" | null>(null);
+  const [loadingStartTime, setLoadingStartTime] = useState<number>(0);
+  const [loadingProgress, setLoadingProgress] = useState<number>(0);
+
+  // Progress bar simulation for better UX
+  useEffect(() => {
+    let interval: number | undefined;
+    
+    if (isLoading) {
+      setLoadingStartTime(Date.now());
+      setLoadingProgress(0);
+      
+      interval = window.setInterval(() => {
+        const elapsed = Date.now() - loadingStartTime;
+        // Simulate progress up to 90% (reserving the last 10% for actual response handling)
+        const newProgress = Math.min(90, Math.floor(elapsed / 300)); // 30 seconds to reach 90%
+        setLoadingProgress(newProgress);
+      }, 300);
+    } else {
+      if (loadingProgress > 0) {
+        setLoadingProgress(100); // Complete the progress bar
+      }
+      clearInterval(interval);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isLoading, loadingStartTime]);
 
   // Automatically trigger search when initialSearchTerm is provided
   useEffect(() => {
@@ -65,6 +93,11 @@ export function Search({ onResultsReceived, searchTerm: initialSearchTerm }: Sea
         const firstBook = response.recommendations[0] as any;
         if (firstBook && firstBook.source === 'fallback') {
           setResultSource('fallback');
+          toast({
+            title: "Using backup data",
+            description: "We're showing alternative recommendations because our AI service is currently busy.",
+            variant: "default",
+          });
         } else {
           setResultSource('api');
         }
@@ -81,7 +114,7 @@ export function Search({ onResultsReceived, searchTerm: initialSearchTerm }: Sea
       }
     } catch (err) {
       console.error("Search error:", err);
-      setError("Failed to get recommendations. Please try again later.");
+      setError(`Failed to get recommendations: ${err instanceof Error ? err.message : "Unknown error"}. Please try again later.`);
       toast({
         title: "Search failed",
         description: "We couldn't process your search request. Please try again.",
@@ -121,6 +154,12 @@ export function Search({ onResultsReceived, searchTerm: initialSearchTerm }: Sea
 
       {isLoading && (
         <div className="flex flex-col items-center justify-center p-12">
+          <div className="w-full h-2 bg-gray-200 rounded-full mb-4">
+            <div 
+              className="h-full bg-blue-600 rounded-full transition-all duration-300" 
+              style={{ width: `${loadingProgress}%` }}
+            ></div>
+          </div>
           <Loader2 className="h-12 w-12 animate-spin mb-4 text-blue-600" />
           <p className="text-lg">Searching the literary cosmos...</p>
           <p className="text-gray-500 mt-2">This might take up to 30 seconds as we consult multiple AI services</p>
@@ -136,9 +175,12 @@ export function Search({ onResultsReceived, searchTerm: initialSearchTerm }: Sea
       )}
 
       {resultSource === 'fallback' && !isLoading && results && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-          <p className="text-amber-800">
-            <span className="font-semibold">Note:</span> Showing fallback results. The API service is currently unavailable or returned no results.
+        <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 mb-6">
+          <p className="text-amber-800 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <span>
+              <span className="font-semibold">Note:</span> Showing alternative recommendations. The AI service is currently busy. These results are still relevant but may not be as personalized.
+            </span>
           </p>
         </div>
       )}

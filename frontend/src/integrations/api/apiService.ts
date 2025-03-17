@@ -1,72 +1,13 @@
 import { toast } from "@/components/ui/use-toast";
 import { RecommendationResponse } from "@/types";
-import { logVersion } from "@/utils/debugTools";
 
-// Add type definition for window.ENV if it doesn't exist
-declare global {
-  interface Window {
-    ENV?: {
-      VITE_API_BASE_URL?: string;
-      VITE_API_KEY?: string;
-    };
-  }
-}
-
-// API Integration Version - increment to force cache invalidation on deployment
-const API_INTEGRATION_VERSION = '1.0.1';
-
-// Get API configuration from environment variables
-const getApiKey = () => {
-  // First try window.ENV (set by Vercel build for production)
-  if (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) {
-    console.log('API Key found in window.ENV');
-    return window.ENV.VITE_API_KEY;
-  }
-  // Then try import.meta.env (for local development)
-  if (import.meta.env.VITE_API_KEY) {
-    console.log('API Key found in import.meta.env');
-    return import.meta.env.VITE_API_KEY;
-  }
-  // Default development API key - only for testing
-  console.log('Using default development API key');
-  return 'alexandria-dev-3245';
-};
-
-const getApiBaseUrl = () => {
-  // First try window.ENV
-  if (typeof window !== 'undefined' && window.ENV?.VITE_API_BASE_URL) {
-    return window.ENV.VITE_API_BASE_URL;
-  }
-  // Then try import.meta.env
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-  // Default
-  return 'https://alexandria-api.onrender.com';
-};
-
-// Initialize API configuration values
-const API_BASE_URL = getApiBaseUrl();
-const API_KEY = getApiKey();
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 // Log API configuration on startup (for debugging)
-console.log('==================================================');
-console.log(`API INTEGRATION SERVICE v${API_INTEGRATION_VERSION} - LOADED`);
-console.log('==================================================');
-console.log('API Integration Service Configuration:');
+console.log('API Configuration:');
 console.log(`- Base URL: ${API_BASE_URL}`);
 console.log(`- API Key: ${API_KEY ? '✓ Set' : '✗ Not set'}`);
-console.log(`- API Key Value: ${API_KEY ? API_KEY.substring(0, 6) + '...' : 'Not set'}`);
-console.log(`- API Key Length: ${API_KEY ? API_KEY.length : 0}`);
-
-if (typeof window !== 'undefined') {
-  console.log('- window.ENV:', window.ENV || 'Not defined');
-  if (window.ENV) {
-    console.log('- window.ENV.VITE_API_KEY exists:', !!window.ENV.VITE_API_KEY);
-    console.log('- window.ENV.VITE_API_KEY length:', window.ENV.VITE_API_KEY ? window.ENV.VITE_API_KEY.length : 0);
-  }
-}
-console.log('- import.meta.env.VITE_API_KEY exists:', !!import.meta.env.VITE_API_KEY);
 
 interface FetchOptions {
   method?: string;
@@ -83,64 +24,75 @@ export const apiService = {
    */
   async fetchFromAPI(endpoint: string, options: FetchOptions = {}) {
     try {
-      console.log(`API Integration: Preparing request to ${endpoint}`);
-      
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...options.headers,
       };
       
-      // Add API key if available - always use the current value
-      const currentApiKey = getApiKey();
-      if (currentApiKey) {
-        headers['X-API-Key'] = currentApiKey;
-        console.log('API Integration: Using API Key for request');
+      // Add API key if available
+      if (API_KEY) {
+        headers['X-API-Key'] = API_KEY;
+        console.log('Using API Key for request');
       } else {
-        console.warn('API Integration: No API Key found in environment variables');
+        console.warn('No API Key found in environment variables');
       }
       
-      console.log(`API Integration: Making request to: ${API_BASE_URL}${endpoint}`);
-      console.log('API Integration: Request headers:', Object.keys(headers).map(key => 
-        key === 'X-API-Key' ? `${key}: [REDACTED]` : `${key}: ${headers[key]}`
-      ));
+      console.log(`Making request to: ${API_BASE_URL}${endpoint}`);
+      console.log('Request headers:', headers);
       
-      if (options.body) {
-        console.log('API Integration: Request body:', typeof options.body === 'string' 
-          ? options.body 
-          : JSON.stringify(options.body));
-      }
+      // Add timeout to avoid hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: options.method || 'GET',
-        headers,
-        body: options.body ? JSON.stringify(options.body) : undefined,
-      });
-      
-      if (!response.ok) {
-        // Try to get error details from response
-        let errorMessage = `API request failed with status ${response.status}`;
-        try {
-          const errorData = await response.json();
-          console.error('API Error Details:', errorData);
-          errorMessage = errorData?.message || errorMessage;
-        } catch (e) {
-          // If can't parse as JSON, try to get text
-          try {
-            const errorText = await response.text();
-            console.error('API Error Text:', errorText);
-            errorMessage = errorText || errorMessage;
-          } catch (textError) {
-            console.error('Could not read error response');
-          }
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          method: options.method || 'GET',
+          headers,
+          body: options.body ? JSON.stringify(options.body) : undefined,
+          signal: controller.signal,
+        });
+        
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          console.error('API Error:', errorData || response.statusText);
+          throw new Error(errorData?.message || `API request failed with status ${response.status}`);
         }
-        throw new Error(errorMessage);
+        
+        // Try to get the response as JSON first
+        try {
+          const responseData = await response.json();
+          console.log('Response received successfully as JSON');
+          return responseData;
+        } catch (jsonError) {
+          // If JSON parsing fails, try to extract JSON from markdown
+          console.warn('Failed to parse response as JSON, trying to extract from text', jsonError);
+          const text = await response.clone().text();
+          
+          // Try to extract JSON from the text (might be in a markdown code block)
+          const extractedJson = extractJsonFromText(text);
+          if (extractedJson) {
+            console.log('Successfully extracted JSON from text response');
+            return extractedJson;
+          }
+          
+          // If we couldn't extract JSON, rethrow the original error
+          throw new Error('API returned invalid JSON response');
+        }
+      } catch (fetchError: any) {
+        // Clear the timeout if there was an error
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('API request timed out after 30 seconds');
+        }
+        
+        throw fetchError;
       }
-      
-      const responseData = await response.json();
-      console.log('API Integration: Response received successfully');
-      return responseData;
     } catch (error) {
-      console.error('API Integration: Request error:', error);
+      console.error('API request error:', error);
       toast({
         title: "API Request Failed",
         description: error instanceof Error ? error.message : "An unknown error occurred",
@@ -161,7 +113,6 @@ export const apiService = {
    * Sends a POST request to the API
    */
   async post(endpoint: string, data: any, headers = {}) {
-    console.log(`API Integration: POST request to ${endpoint} with data:`, data);
     return this.fetchFromAPI(endpoint, {
       method: 'POST',
       headers,
@@ -177,11 +128,10 @@ export const apiService = {
  */
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
   try {
-    console.log(`API Integration: Requesting recommendations for: "${searchTerm}"`);
+    console.log(`Requesting recommendations for: "${searchTerm}"`);
     
     // Generate a random user ID for tracking
     const userId = 'web_user_' + Math.random().toString(36).substring(2, 10);
-    console.log(`API Integration: Using user ID: ${userId}`);
     
     // Get search history from localStorage if available
     let history: string[] = [];
@@ -190,10 +140,9 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
         const storedHistory = localStorage.getItem('searchHistory');
         if (storedHistory) {
           history = JSON.parse(storedHistory);
-          console.log('API Integration: Retrieved search history:', history);
         }
       } catch (e) {
-        console.warn('API Integration: Could not retrieve search history:', e);
+        console.warn('Could not retrieve search history:', e);
       }
     }
     
@@ -202,15 +151,45 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       user_id: userId,
       search_term: searchTerm,
       history: history.slice(0, 5), // Only use the 5 most recent searches
-      feedback: [] // Add empty feedback
+      feedback: [], // Add empty feedback
+      max_results: 10 // Request up to 10 recommendations
     };
     
-    console.log('API Integration: Recommendation payload prepared:', payload);
+    console.log('Recommendation payload prepared:', payload);
     
     // Make the request
     return await apiService.post('/api/recommendations', payload);
   } catch (error) {
-    console.error('API Integration: Error fetching recommendations:', error);
+    console.error('Error fetching recommendations from API:', error);
     throw error;
   }
 };
+
+// Helper function to extract JSON from text/markdown responses
+function extractJsonFromText(text: string): any {
+  // Try to find JSON in markdown code blocks (```json ... ```)
+  const jsonBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
+  const match = text.match(jsonBlockRegex);
+  
+  if (match && match[1]) {
+    try {
+      return JSON.parse(match[1].trim());
+    } catch (e) {
+      console.error('Failed to parse JSON from code block:', e);
+    }
+  }
+  
+  // If not in code blocks, try to find anything that looks like JSON
+  const jsonRegex = /(\{[\s\S]*\}|\[[\s\S]*\])/;
+  const generalMatch = text.match(jsonRegex);
+  
+  if (generalMatch && generalMatch[1]) {
+    try {
+      return JSON.parse(generalMatch[1].trim());
+    } catch (e) {
+      console.error('Failed to parse JSON from general text:', e);
+    }
+  }
+  
+  return null;
+}

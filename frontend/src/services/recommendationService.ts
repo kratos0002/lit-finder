@@ -11,9 +11,12 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     // First try the actual API
     const apiResponse = await apiGetRecommendations(searchTerm);
     
-    // If the API returned a valid response with recommendations, return it
-    // But make sure all fields are properly populated or fallback as needed
-    if (apiResponse && apiResponse.recommendations && apiResponse.recommendations.length > 0) {
+    // Improved validation to check for empty or invalid responses
+    if (apiResponse && 
+        apiResponse.recommendations && 
+        apiResponse.recommendations.length > 0 &&
+        apiResponse.top_book && 
+        apiResponse.top_book.title) {
       console.log('RecommendationService: Successfully received API recommendations:', 
         apiResponse.recommendations.length, 'items');
       
@@ -25,18 +28,23 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
         top_social: apiResponse.top_social || mockSocialPosts[0] || null
       };
       
+      // Additional logging for debugging
+      console.log('RecommendationService: Final response structure:', 
+        JSON.stringify({
+          has_top_book: !!response.top_book,
+          has_top_review: !!response.top_review,
+          has_top_social: !!response.top_social,
+          recommendations_count: response.recommendations?.length || 0
+        })
+      );
+      
       return response;
     }
     
-    // If API returned empty array but a valid response, return it with a message
-    if (apiResponse && (!apiResponse.recommendations || apiResponse.recommendations.length === 0)) {
-      console.warn('RecommendationService: API returned no recommendations, using fallback');
-      return await getMockRecommendations(searchTerm);
-    }
-    
-    // If we get here, something went wrong with the API response
-    console.warn('RecommendationService: Invalid API response format, using fallback');
+    // If API returned empty array or invalid response, use fallback
+    console.warn('RecommendationService: API returned incomplete or no recommendations, using fallback');
     return await getMockRecommendations(searchTerm);
+    
   } catch (error) {
     console.error('RecommendationService: API recommendation request failed, using fallback:', error);
     
