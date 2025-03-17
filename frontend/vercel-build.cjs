@@ -152,6 +152,10 @@ export function parseAsync(code, options = {}) {
     <meta name="author" content="Alexandria" />
     <meta property="og:image" content="/og-image.png" />
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
     <!-- Preload critical fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -457,8 +461,8 @@ window.ENV = {
         '</head>',
         '  <link rel="stylesheet" href="./index.css" />\n  </head>'
       ).replace(
-        '<script type="module" src="./index.js"></script>',
-        '<script src="./env.js"></script>\n    <script type="module" src="./index.js"></script>'
+        '<script type="module" src="./app.js"></script>',
+        '<script src="./env.js"></script>\n    <script type="module" src="./app.js"></script>'
       );
       
       // Create a simplified manual React bundle
@@ -550,10 +554,23 @@ root.render(React.createElement(App));
       `.trim();
       
       // Write basic app js
-      fs.writeFileSync(path.join(process.cwd(), 'dist/index.js'), basicAppJs);
+      fs.writeFileSync(path.join(process.cwd(), 'dist/app.js'), basicAppJs);
       
       // Write the index.html
       fs.writeFileSync(indexHtmlPath, updatedHtml);
+      
+      // Create a simple favicon to prevent 404 errors
+      const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#1d1e20"/>
+        <text x="50" y="50" font-family="serif" font-size="70" text-anchor="middle" dominant-baseline="middle" fill="#d4af37">A</text>
+      </svg>`;
+      
+      // Create SVG favicon
+      fs.writeFileSync(path.join(process.cwd(), 'dist/favicon.svg'), faviconSvg);
+      
+      // Create a simple 1x1 transparent GIF for favicon.ico as a fallback
+      const transparentGif = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+      fs.writeFileSync(path.join(process.cwd(), 'dist/favicon.ico'), transparentGif);
       
       console.log('✅ Created manual bundle without esbuild!');
       
