@@ -42,7 +42,7 @@ export const apiService = {
       
       // Add timeout to avoid hanging requests
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
       
       try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -86,7 +86,7 @@ export const apiService = {
         clearTimeout(timeoutId);
         
         if (fetchError.name === 'AbortError') {
-          throw new Error('API request timed out after 30 seconds');
+          throw new Error('API request timed out after 60 seconds');
         }
         
         throw fetchError;
