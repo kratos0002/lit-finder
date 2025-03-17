@@ -1,4 +1,3 @@
-
 import { RecommendationResponse } from "@/types";
 import { getRecommendations as apiGetRecommendations } from "@/integrations/api/apiService";
 import { mockReviews, mockSocialPosts } from "@/data/mockData";
@@ -7,7 +6,7 @@ import { searchBooks } from "@/services/bookService";
 // Export a function that tries the API first, then falls back to mock
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
   try {
-    console.log('Attempting to get recommendations from API for:', searchTerm);
+    console.log('RecommendationService: Attempting to get recommendations from API for:', searchTerm);
     
     // First try the actual API
     const apiResponse = await apiGetRecommendations(searchTerm);
@@ -15,7 +14,8 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     // If the API returned a valid response with recommendations, return it
     // But make sure all fields are properly populated or fallback as needed
     if (apiResponse && apiResponse.recommendations && apiResponse.recommendations.length > 0) {
-      console.log('Successfully received API recommendations');
+      console.log('RecommendationService: Successfully received API recommendations:', 
+        apiResponse.recommendations.length, 'items');
       
       // Ensure top_review and top_social aren't null to prevent UI errors
       // If they are null, use mockData
@@ -30,14 +30,15 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     
     // If API returned empty array but a valid response, return it with a message
     if (apiResponse && (!apiResponse.recommendations || apiResponse.recommendations.length === 0)) {
-      console.log('API returned no recommendations, using fallback');
+      console.warn('RecommendationService: API returned no recommendations, using fallback');
       return await getMockRecommendations(searchTerm);
     }
     
     // If we get here, something went wrong with the API response
-    throw new Error('Invalid API response format');
+    console.warn('RecommendationService: Invalid API response format, using fallback');
+    return await getMockRecommendations(searchTerm);
   } catch (error) {
-    console.error('API recommendation request failed, using fallback:', error);
+    console.error('RecommendationService: API recommendation request failed, using fallback:', error);
     
     // If API fails, use our mock implementation as fallback
     return await getMockRecommendations(searchTerm);

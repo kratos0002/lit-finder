@@ -1,4 +1,5 @@
 import { RecommendationResponse } from "@/types";
+import { apiService, getRecommendations as apiIntegrationGetRecommendations } from "@/integrations/api/apiService";
 
 // Add type definition for window.ENV
 declare global {
@@ -10,146 +11,16 @@ declare global {
   }
 }
 
-// This service handles API calls to the render/recommend endpoint
+/**
+ * Wrapper for the API implementation in integrations/api/apiService
+ * This delegates to the proper implementation to avoid duplication
+ */
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
-  console.log('API service: Getting recommendations for:', searchTerm);
-  
+  console.log('apiService: Delegating getRecommendations call to integrations/api/apiService');
   try {
-    // Get API base URL from environment variables - with clearer debugging
-    const windowEnvApiUrl = typeof window !== 'undefined' ? window.ENV?.VITE_API_BASE_URL : undefined;
-    const importMetaApiUrl = import.meta.env.VITE_API_BASE_URL; 
-    const fallbackApiUrl = 'https://alexandria-api.onrender.com';
-    
-    console.log('API URL resolution:');
-    console.log('- window.ENV?.VITE_API_BASE_URL:', windowEnvApiUrl);
-    console.log('- import.meta.env.VITE_API_BASE_URL:', importMetaApiUrl);
-    console.log('- fallback API URL:', fallbackApiUrl);
-    
-    const apiBaseUrl = windowEnvApiUrl || importMetaApiUrl || fallbackApiUrl;
-    
-    // Get API key from environment variables - with clearer debugging
-    const windowEnvApiKey = typeof window !== 'undefined' ? window.ENV?.VITE_API_KEY : undefined;
-    const importMetaApiKey = import.meta.env.VITE_API_KEY;
-    
-    console.log('API Key resolution:');
-    console.log('- window.ENV?.VITE_API_KEY exists:', !!windowEnvApiKey);
-    console.log('- window.ENV?.VITE_API_KEY length:', windowEnvApiKey ? windowEnvApiKey.length : 0);
-    console.log('- window.ENV?.VITE_API_KEY value:', windowEnvApiKey ? `${windowEnvApiKey.substring(0, 6)}...` : 'undefined');
-    console.log('- import.meta.env.VITE_API_KEY exists:', !!importMetaApiKey);
-    
-    // Default development API key - only used when no environment variable is set
-    // This is safe to include in the code as it's only for development/testing
-    const defaultDevApiKey = 'alexandria-dev-3245'; 
-    
-    // Use environment variables if available, otherwise fall back to default dev key
-    const apiKey = windowEnvApiKey || importMetaApiKey || defaultDevApiKey;
-    
-    // Update to use /api/recommendations as shown in the API documentation
-    const url = `${apiBaseUrl}/api/recommendations`;
-    
-    // Log API configuration on startup (for debugging)
-    console.log('Final API Configuration:');
-    console.log(`- Base URL: ${apiBaseUrl}`);
-    // More direct check for API key
-    console.log(`- API Key: ${apiKey && apiKey.trim().length > 0 ? '✓ Set' : '✗ Not set'}`);
-    console.log(`- API Key value check:`, apiKey ? `First 6 chars: ${apiKey.substring(0, 6)}...` : 'Empty');
-    console.log(`- API Key length: ${apiKey ? apiKey.length : 0}`);
-    
-    // Prepare the request payload for the /api/recommendations endpoint
-    const payload = {
-      user_id: "web_user_" + Math.random().toString(36).substring(2, 10),
-      search_term: searchTerm,  // Based on API documentation, it's search_term not query
-      history: [],
-      feedback: []
-    };
-    
-    console.log(`Attempting to get recommendations from API for: ${searchTerm}`);
-    console.log(`Requesting recommendations for: "${searchTerm}"`);
-    
-    // Log the final configuration for this request
-    console.log(`Making request to: ${url}`);
-    console.log(`With API key: ${apiKey ? '✓ Present' : '✗ Missing'} (${apiKey === defaultDevApiKey ? 'Using default dev key' : 'Using environment variable'})`);
-    console.log(`API Key source: ${windowEnvApiKey ? 'window.ENV' : importMetaApiKey ? 'import.meta.env' : 'Default fallback'}`);
-    
-    console.log('With payload:', payload);
-    
-    // Prepare headers with API key
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      // Always include API key in headers
-      'X-API-Key': apiKey
-    };
-    
-    // Log API key status
-    if (apiKey && apiKey.length > 0) {
-      console.log('Using API key for authentication');
-    } else {
-      console.warn('API key is empty - this may cause authentication issues');
-    }
-    
-    // Log the final headers being sent (without showing the actual API key value)
-    console.log('Request headers:', Object.keys(headers).map(key => 
-      key === 'X-API-Key' ? `${key}: [REDACTED]` : `${key}: ${headers[key]}`
-    ));
-    
-    // Make the actual API call
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
-    
-    // Check if the request was successful
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API error:', response.status, errorText);
-      throw new Error(`API error: ${response.status} ${errorText}`);
-    }
-    
-    // Parse the response
-    const data = await response.json();
-    console.log('API response received:', data);
-    
-    // Process the response from the /recommend endpoint
-    // The format might be different from our internal format, so we need to transform it
-    let processedData: RecommendationResponse;
-    
-    try {
-      if (data && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
-        console.log(`Found ${data.recommendations.length} recommendations from API`);
-        
-        // Map the API response to our expected format
-        processedData = {
-          top_book: data.top_book || null,
-          top_review: data.top_review || null,
-          top_social: data.top_social || null,
-          recommendations: data.recommendations.map((item: any) => ({
-            id: item.id || `rec-${Math.random().toString(36).substring(2, 10)}`,
-            title: item.title,
-            author: item.author || 'Unknown Author',
-            coverImage: item.cover_image || item.coverImage || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop",
-            description: item.description || item.summary || '',
-            summary: item.summary || item.description || '',
-            category: item.category || 'General',
-            matchScore: item.match_score || item.matchScore || 85,
-            publicationDate: item.publication_date || item.publicationDate || '2023',
-            source: item.source || 'api'
-          }))
-        };
-        
-        return processedData;
-      } else {
-        console.warn('API returned empty or invalid results, using fallback');
-        return getFallbackRecommendations(searchTerm);
-      }
-    } catch (error) {
-      console.error('Error processing API response:', error);
-      return getFallbackRecommendations(searchTerm);
-    }
+    return await apiIntegrationGetRecommendations(searchTerm);
   } catch (error) {
-    console.error('Error calling recommendations API:', error);
-    
-    // In case of API failure, return fallback data
+    console.error('Error in apiService wrapper, using fallback:', error);
     return getFallbackRecommendations(searchTerm);
   }
 };
