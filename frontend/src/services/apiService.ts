@@ -22,12 +22,12 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       import.meta.env.VITE_API_BASE_URL || 
       'https://alexandria-api.onrender.com';
     
-    // TEMPORARY: Hard-coded API key for testing
-    // TODO: REMOVE THIS BEFORE PRODUCTION
+    // Get API key from environment variables 
+    // Note: Removed hardcoded key for security - now using env vars only
     const apiKey = 
       (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
       import.meta.env.VITE_API_KEY || 
-      'alexandria-dev-3245'; // Direct API key for testing
+      ''; // No fallback key for security reasons
     
     const url = `${apiBaseUrl}/api/recommendations`;
     
@@ -35,6 +35,8 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     console.log('API Configuration:');
     console.log(`- Base URL: ${apiBaseUrl}`);
     console.log(`- API Key: ${apiKey ? '✓ Set' : '✗ Not set'}`);
+    console.log('- window.ENV:', typeof window !== 'undefined' ? window.ENV : 'Not in browser');
+    console.log('- import.meta.env.VITE_API_KEY exists:', !!import.meta.env.VITE_API_KEY);
     
     // Prepare the request payload
     const payload = {
@@ -189,38 +191,18 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
       import.meta.env.VITE_API_BASE_URL || 
       'https://alexandria-api.onrender.com';
     
-    // TEMPORARY: Hard-coded API key for testing
-    // TODO: REMOVE THIS BEFORE PRODUCTION
+    // Get API key from environment variables - no hardcoded fallback
     const apiKey = 
       (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
       import.meta.env.VITE_API_KEY || 
-      'alexandria-dev-3245'; // Direct API key for testing
+      '';
+    
+    // Log environment variables for debugging
+    console.log('Environment in getTrendingItems:');
+    console.log('- window.ENV:', typeof window !== 'undefined' ? window.ENV : 'Not in browser');
+    console.log('- import.meta.env.VITE_API_KEY exists:', !!import.meta.env.VITE_API_KEY);
     
     const url = `${apiBaseUrl}/api/trending`;
-    
-    // Prepare headers with API key
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Add API key header if available
-    if (apiKey) {
-      headers['X-API-Key'] = apiKey;
-    }
-    
-    // Make the API call
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ history: searchHistory })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return { items: data.items || [] };
     */
     
     // Instead, return mock trending items directly

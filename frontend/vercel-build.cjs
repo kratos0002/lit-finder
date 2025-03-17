@@ -21,8 +21,22 @@ function loadEnvVars() {
   const envVars = {};
   const envPath = path.join(process.cwd(), '.env');
   
+  // First try to load from process.env (Vercel environment variables)
+  console.log('Checking for environment variables in process.env');
+  const keysToCheck = ['VITE_API_BASE_URL', 'VITE_API_KEY'];
+  
+  keysToCheck.forEach(key => {
+    if (process.env[key]) {
+      envVars[key] = process.env[key];
+      console.log(`Loaded env var from process.env: ${key}=${process.env[key].substring(0, 3)}...`);
+    } else {
+      console.log(`Environment variable ${key} not found in process.env`);
+    }
+  });
+  
+  // Then try to load from .env file as fallback
   if (fs.existsSync(envPath)) {
-    console.log('Loading environment variables from .env file');
+    console.log('Loading additional environment variables from .env file');
     const envFile = fs.readFileSync(envPath, 'utf8');
     
     // Parse basic KEY=VALUE pairs, ignoring comments
@@ -33,14 +47,23 @@ function loadEnvVars() {
       const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
       if (match) {
         const key = match[1];
-        const value = match[2] || '';
-        envVars[key] = value.replace(/^['"]|['"]$/g, ''); // Remove quotes if present
-        console.log(`Loaded env var: ${key}=${value.substring(0, 3)}...`);
+        // Only set from .env if not already set from process.env
+        if (!envVars[key]) {
+          const value = match[2] || '';
+          envVars[key] = value.replace(/^['"]|['"]$/g, ''); // Remove quotes if present
+          console.log(`Loaded env var from .env: ${key}=${value.substring(0, 3)}...`);
+        }
       }
     });
   } else {
     console.log('No .env file found. Using defaults or environment variables.');
   }
+  
+  // Log all environment variables loaded
+  console.log('All environment variables loaded:');
+  Object.keys(envVars).forEach(key => {
+    console.log(`- ${key}: ${envVars[key] ? '✓ Set' : '✗ Not set'}`);
+  });
   
   return envVars;
 }
@@ -255,14 +278,21 @@ export function parseAsync(code, options = {}) {
     </style>
     <script>
       // Inline environment variables
-      window.importMetaEnv = {
+      window.ENV = {
         VITE_API_BASE_URL: "${envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com'}",
         VITE_API_KEY: "${envVars.VITE_API_KEY || ''}"
       };
       // Make import.meta.env available globally
       Object.defineProperty(window, 'import', {
-        value: { meta: { env: window.importMetaEnv } }
+        value: { meta: { env: {
+          VITE_API_BASE_URL: "${envVars.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com'}",
+          VITE_API_KEY: "${envVars.VITE_API_KEY || ''}"
+        } } }
       });
+      // Log environment variables for debugging
+      console.log('Environment variables loaded in browser:');
+      console.log('- window.ENV:', window.ENV);
+      console.log('- import.meta.env:', window.import.meta.env);
     </script>
   </head>
 
