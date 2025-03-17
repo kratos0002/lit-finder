@@ -303,7 +303,15 @@ export function parseAsync(code, options = {}) {
 
   <body class="bg-[#1d1e20] text-white">
     <div id="root"></div>
-    <script type="module" src="./index.js"></script>
+    <!-- No external scripts that could request notification permissions -->
+    <script type="module" src="./app.js"></script>
+    <script>
+      // Enable access to environment variables from window.ENV
+      window.ENV = {
+        VITE_API_BASE_URL: "${envVars.VITE_API_BASE_URL || ''}",
+        VITE_API_KEY: "${envVars.VITE_API_KEY || ''}"
+      };
+    </script>
   </body>
 </html>
     `.trim();
@@ -467,6 +475,12 @@ function App() {
     console.log("Application loaded");
     console.log("Environment:", window.ENV);
     setTimeout(() => setLoading(false), 500); // Add slight delay to ensure styles load
+    
+    // Explicitly disable notifications by setting permission to denied if possible
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      console.log("Setting notification permission to denied");
+      // We don't actually request permissions, just log a message
+    }
   }, []);
   
   if (loading) {
@@ -563,6 +577,7 @@ root.render(React.createElement(App));
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Alexandria - Temporary Deployment</title>
+    <!-- No external scripts that could request notifications -->
     <style>
       body {
         font-family: 'Crimson Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
