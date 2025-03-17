@@ -15,33 +15,36 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
   console.log('API service: Getting recommendations for:', searchTerm);
   
   try {
-    // Get API base URL from environment variables
-    // First check window.ENV (from vercel-build.cjs), then import.meta.env
-    const apiBaseUrl = 
-      (typeof window !== 'undefined' && window.ENV?.VITE_API_BASE_URL) || 
-      import.meta.env.VITE_API_BASE_URL || 
-      'https://alexandria-api.onrender.com';
+    // Get API base URL from environment variables - with clearer debugging
+    const windowEnvApiUrl = typeof window !== 'undefined' ? window.ENV?.VITE_API_BASE_URL : undefined;
+    const importMetaApiUrl = import.meta.env.VITE_API_BASE_URL; 
+    const fallbackApiUrl = 'https://alexandria-api.onrender.com';
     
-    // Get API key from environment variables 
-    // Note: Removed hardcoded key for security - now using env vars only
-    const apiKey = 
-      (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) || 
-      import.meta.env.VITE_API_KEY || 
-      ''; // No fallback key for security reasons
+    console.log('API URL resolution:');
+    console.log('- window.ENV?.VITE_API_BASE_URL:', windowEnvApiUrl);
+    console.log('- import.meta.env.VITE_API_BASE_URL:', importMetaApiUrl);
+    console.log('- fallback API URL:', fallbackApiUrl);
+    
+    const apiBaseUrl = windowEnvApiUrl || importMetaApiUrl || fallbackApiUrl;
+    
+    // Get API key from environment variables - with clearer debugging
+    const windowEnvApiKey = typeof window !== 'undefined' ? window.ENV?.VITE_API_KEY : undefined;
+    const importMetaApiKey = import.meta.env.VITE_API_KEY;
+    
+    console.log('API Key resolution:');
+    console.log('- window.ENV?.VITE_API_KEY exists:', !!windowEnvApiKey);
+    console.log('- window.ENV?.VITE_API_KEY length:', windowEnvApiKey ? windowEnvApiKey.length : 0);
+    console.log('- import.meta.env.VITE_API_KEY exists:', !!importMetaApiKey);
+    
+    const apiKey = windowEnvApiKey || importMetaApiKey || '';
     
     const url = `${apiBaseUrl}/api/recommendations`;
     
     // Log API configuration on startup (for debugging)
-    console.log('API Configuration:');
+    console.log('Final API Configuration:');
     console.log(`- Base URL: ${apiBaseUrl}`);
-    // The issue is that empty strings evaluate to false in the ternary condition below
-    // So even if apiKey is set to an empty string, it shows as "Not set"
-    // Let's check for undefined or null instead
     console.log(`- API Key: ${apiKey !== undefined && apiKey !== null && apiKey !== '' ? '✓ Set' : '✗ Not set'}`);
-    if (typeof window !== 'undefined') {
-      console.log('- window.ENV.VITE_API_KEY:', window.ENV?.VITE_API_KEY);
-    }
-    console.log('- import.meta.env.VITE_API_KEY:', import.meta.env.VITE_API_KEY);
+    console.log(`- API Key length: ${apiKey ? apiKey.length : 0}`);
     
     // Prepare the request payload
     const payload = {
@@ -182,61 +185,51 @@ function getFallbackRecommendations(searchTerm: string): RecommendationResponse 
   };
 }
 
-// Function to get trending items
+// Function to get trending items - MOCK IMPLEMENTATION ONLY
 export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ items: any[] }> => {
   console.log('Getting trending items with search history:', searchHistory);
   
-  try {
-    // DO NOT try to call the trending API endpoint - it doesn't exist
-    // Instead, return mock trending items directly
-    console.log('Using mock trending items since API endpoint is not available');
-    return {
-      items: [
-        {
-          id: "trend-1",
-          title: "The Rise of AI in Literature",
-          description: "How artificial intelligence is changing the way we discover and read books",
-          category: "Technology",
-          source: "Literary Review",
-          url: "https://example.com/ai-literature",
-          published_at: new Date().toISOString()
-        },
-        {
-          id: "trend-2",
-          title: "Top Summer Reads for 2025",
-          description: "The most anticipated books coming this summer",
-          category: "Reading Lists",
-          source: "BookReviews",
-          url: "https://example.com/summer-reads",
-          published_at: new Date().toISOString()
-        },
-        {
-          id: "trend-3",
-          title: "Classic Literature in the Digital Age",
-          description: "How digital platforms are bringing classics to new audiences",
-          category: "Digital",
-          source: "Literary Digest",
-          url: "https://example.com/classics-digital",
-          published_at: new Date().toISOString()
-        }
-      ]
-    };
-  } catch (error) {
-    console.error('Error in getTrendingItems:', error);
-    
-    // Fallback trending items in case of any unexpected error
-    return {
-      items: [
-        {
-          id: "fallback-1",
-          title: "Fallback Trending Item",
-          description: "This is a fallback item shown when there's an error",
-          category: "Fallback",
-          source: "System",
-          url: "#",
-          published_at: new Date().toISOString()
-        }
-      ]
-    };
-  }
+  // IMPORTANT: DO NOT MODIFY THIS IMPLEMENTATION TO CALL ANY REAL API
+  // This endpoint does not exist in the backend - we use mock data only
+  const mockItems = [
+    {
+      id: "trend-1",
+      title: "The Rise of AI in Literature",
+      description: "How artificial intelligence is changing the way we discover and read books",
+      category: "Technology",
+      source: "Literary Review",
+      url: "https://example.com/ai-literature",
+      published_at: new Date().toISOString()
+    },
+    {
+      id: "trend-2",
+      title: "Top Summer Reads for 2025",
+      description: "The most anticipated books coming this summer",
+      category: "Reading Lists",
+      source: "BookReviews",
+      url: "https://example.com/summer-reads",
+      published_at: new Date().toISOString()
+    },
+    {
+      id: "trend-3",
+      title: "Classic Literature in the Digital Age",
+      description: "How digital platforms are bringing classics to new audiences",
+      category: "Digital",
+      source: "Literary Digest",
+      url: "https://example.com/classics-digital",
+      published_at: new Date().toISOString()
+    },
+    {
+      id: "trend-4", 
+      title: "Reading Habits in the Digital Age",
+      description: "How modern readers are adapting to new formats and platforms",
+      category: "Research",
+      source: "Book Analytics",
+      url: "https://example.com/reading-habits",
+      published_at: new Date().toISOString()
+    }
+  ];
+  
+  console.log('Returning mock trending items:', mockItems.length);
+  return { items: mockItems };
 };

@@ -27,8 +27,19 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
   } = useQuery({
     queryKey: ['trending', searchHistory],
     queryFn: async () => {
-      console.log('Fetching trending items with history:', searchHistory);
-      return getTrendingItems(searchHistory);
+      console.log('TrendingSection: Starting to fetch trending items...');
+      console.log('Search history:', searchHistory);
+      
+      try {
+        // Add a console log before calling getTrendingItems
+        console.log('TrendingSection: Calling getTrendingItems from apiService...');
+        const result = await getTrendingItems(searchHistory);
+        console.log('TrendingSection: getTrendingItems returned successfully:', result);
+        return result;
+      } catch (err) {
+        console.error('TrendingSection: Error in queryFn calling getTrendingItems:', err);
+        throw err;
+      }
     },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     refetchOnWindowFocus: false,
