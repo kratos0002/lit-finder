@@ -34,22 +34,24 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     console.log('API Key resolution:');
     console.log('- window.ENV?.VITE_API_KEY exists:', !!windowEnvApiKey);
     console.log('- window.ENV?.VITE_API_KEY length:', windowEnvApiKey ? windowEnvApiKey.length : 0);
+    console.log('- window.ENV?.VITE_API_KEY value:', windowEnvApiKey ? `${windowEnvApiKey.substring(0, 6)}...` : 'undefined');
     console.log('- import.meta.env.VITE_API_KEY exists:', !!importMetaApiKey);
     
     const apiKey = windowEnvApiKey || importMetaApiKey || '';
     
-    const url = `${apiBaseUrl}/api/recommendations`;
+    // Using the /recommend endpoint directly on the Render API as requested
+    const url = `${apiBaseUrl}/recommend`;
     
     // Log API configuration on startup (for debugging)
     console.log('Final API Configuration:');
     console.log(`- Base URL: ${apiBaseUrl}`);
-    console.log(`- API Key: ${apiKey !== undefined && apiKey !== null && apiKey !== '' ? '✓ Set' : '✗ Not set'}`);
+    console.log(`- API Key: ${apiKey && apiKey.length > 0 ? '✓ Set' : '✗ Not set'}`);
     console.log(`- API Key length: ${apiKey ? apiKey.length : 0}`);
     
-    // Prepare the request payload
+    // Prepare the request payload for the /recommend endpoint
     const payload = {
       user_id: "web_user_" + Math.random().toString(36).substring(2, 10),
-      search_term: searchTerm,
+      query: searchTerm,  // Changed from search_term to query to match expected API format
       history: [],
       feedback: []
     };
@@ -62,13 +64,18 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       'Content-Type': 'application/json',
     };
     
-    // Add API key header if available
-    if (apiKey) {
+    // Always add API key header if it exists and has length
+    if (apiKey && apiKey.length > 0) {
       console.log('Using API key for authentication');
       headers['X-API-Key'] = apiKey;
     } else {
-      console.warn('No API key found in environment variables');
+      console.warn('API key is empty or missing - this may cause authentication issues');
     }
+    
+    // Log the final headers being sent (without showing the actual API key value)
+    console.log('Request headers:', Object.keys(headers).map(key => 
+      key === 'X-API-Key' ? `${key}: [REDACTED]` : `${key}: ${headers[key]}`
+    ));
     
     // Make the actual API call
     const response = await fetch(url, {
@@ -88,19 +95,42 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     const data = await response.json();
     console.log('API response received:', data);
     
-    // If we got an empty response or no recommendations, create a fallback
-    if (!data || !data.recommendations || data.recommendations.length === 0) {
-      console.warn('API returned empty results, using fallback');
+    // Process the response from the /recommend endpoint
+    // The format might be different from our internal format, so we need to transform it
+    let processedData: RecommendationResponse;
+    
+    try {
+      if (data && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
+        console.log(`Found ${data.recommendations.length} recommendations from API`);
+        
+        // Map the API response to our expected format
+        processedData = {
+          top_book: data.top_book || null,
+          top_review: data.top_review || null,
+          top_social: data.top_social || null,
+          recommendations: data.recommendations.map((item: any) => ({
+            id: item.id || `rec-${Math.random().toString(36).substring(2, 10)}`,
+            title: item.title,
+            author: item.author || 'Unknown Author',
+            coverImage: item.cover_image || item.coverImage || "https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=800&auto=format&fit=crop",
+            description: item.description || item.summary || '',
+            summary: item.summary || item.description || '',
+            category: item.category || 'General',
+            matchScore: item.match_score || item.matchScore || 85,
+            publicationDate: item.publication_date || item.publicationDate || '2023',
+            source: item.source || 'api'
+          }))
+        };
+        
+        return processedData;
+      } else {
+        console.warn('API returned empty or invalid results, using fallback');
+        return getFallbackRecommendations(searchTerm);
+      }
+    } catch (error) {
+      console.error('Error processing API response:', error);
       return getFallbackRecommendations(searchTerm);
     }
-    
-    // Transform API response to match our expected format if needed
-    return {
-      top_book: data.top_book || null,
-      top_review: data.top_review || null,
-      top_social: data.top_social || null,
-      recommendations: data.recommendations || []
-    };
   } catch (error) {
     console.error('Error calling recommendations API:', error);
     
