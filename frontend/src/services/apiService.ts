@@ -180,6 +180,9 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
   console.log('Getting trending items with search history:', searchHistory);
   
   try {
+    // Since the trending endpoint doesn't exist yet, we'll use mock data
+    // Comment out the API call code for now
+    /*
     // Get API base URL from environment variables
     const apiBaseUrl = 
       (typeof window !== 'undefined' && window.ENV?.VITE_API_BASE_URL) || 
@@ -218,10 +221,10 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
     
     const data = await response.json();
     return { items: data.items || [] };
-  } catch (error) {
-    console.error('Error fetching trending items:', error);
+    */
     
-    // Return mock trending items
+    // Instead, return mock trending items directly
+    console.log('Using mock trending items since API endpoint is not available');
     return {
       items: [
         {
@@ -238,17 +241,34 @@ export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ 
           title: "Top Summer Reads for 2025",
           description: "The most anticipated books coming this summer",
           category: "Reading Lists",
-          source: "Book Magazine",
+          source: "BookReviews",
           url: "https://example.com/summer-reads",
           published_at: new Date().toISOString()
         },
         {
           id: "trend-3",
-          title: "Independent Bookstores Making a Comeback",
-          description: "How local bookshops are thriving in the digital age",
-          category: "Industry",
-          source: "Publishing Weekly",
-          url: "https://example.com/bookstore-comeback",
+          title: "Classic Literature in the Digital Age",
+          description: "How digital platforms are bringing classics to new audiences",
+          category: "Digital",
+          source: "Literary Digest",
+          url: "https://example.com/classics-digital",
+          published_at: new Date().toISOString()
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Error in getTrendingItems:', error);
+    
+    // Return fallback trending items
+    return {
+      items: [
+        {
+          id: "fallback-1",
+          title: "Discover New Authors",
+          description: "Explore emerging voices in literature",
+          category: "Discovery",
+          source: "fallback",
+          url: "https://example.com/new-authors",
           published_at: new Date().toISOString()
         }
       ]
