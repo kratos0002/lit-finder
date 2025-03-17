@@ -17,7 +17,7 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
   const [savedItems, setSavedItems] = useState<TrendingItem[]>([]);
   const { toast } = useToast();
   
-  // Use React Query to fetch real trending items
+  // Use React Query to fetch trending items (mock implementation only)
   const { 
     data: trendingData, 
     isLoading, 
@@ -27,17 +27,17 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
   } = useQuery({
     queryKey: ['trending', searchHistory],
     queryFn: async () => {
-      console.log('TrendingSection: Starting to fetch trending items...');
-      console.log('Search history:', searchHistory);
+      console.log('TrendingSection: Getting mock trending items...');
+      console.log('Search history (not used for API calls):', searchHistory);
       
       try {
-        // Add a console log before calling getTrendingItems
-        console.log('TrendingSection: Calling getTrendingItems from apiService...');
+        // The getTrendingItems function does NOT make any API calls
+        console.log('TrendingSection: Calling mock getTrendingItems function...');
         const result = await getTrendingItems(searchHistory);
-        console.log('TrendingSection: getTrendingItems returned successfully:', result);
+        console.log('TrendingSection: Mock trending items retrieved:', result);
         return result;
       } catch (err) {
-        console.error('TrendingSection: Error in queryFn calling getTrendingItems:', err);
+        console.error('TrendingSection: Error retrieving mock trending items:', err);
         throw err;
       }
     },

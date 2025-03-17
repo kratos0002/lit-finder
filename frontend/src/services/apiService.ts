@@ -39,19 +39,21 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     
     const apiKey = windowEnvApiKey || importMetaApiKey || '';
     
-    // Using the /recommend endpoint directly on the Render API as requested
-    const url = `${apiBaseUrl}/recommend`;
+    // Update to use /api/recommendations as shown in the API documentation
+    const url = `${apiBaseUrl}/api/recommendations`;
     
     // Log API configuration on startup (for debugging)
     console.log('Final API Configuration:');
     console.log(`- Base URL: ${apiBaseUrl}`);
-    console.log(`- API Key: ${apiKey && apiKey.length > 0 ? '✓ Set' : '✗ Not set'}`);
+    // More direct check for API key
+    console.log(`- API Key: ${apiKey && apiKey.trim().length > 0 ? '✓ Set' : '✗ Not set'}`);
+    console.log(`- API Key value check:`, apiKey ? `First 6 chars: ${apiKey.substring(0, 6)}...` : 'Empty');
     console.log(`- API Key length: ${apiKey ? apiKey.length : 0}`);
     
-    // Prepare the request payload for the /recommend endpoint
+    // Prepare the request payload for the /api/recommendations endpoint
     const payload = {
       user_id: "web_user_" + Math.random().toString(36).substring(2, 10),
-      query: searchTerm,  // Changed from search_term to query to match expected API format
+      search_term: searchTerm,  // Based on API documentation, it's search_term not query
       history: [],
       feedback: []
     };
@@ -215,51 +217,49 @@ function getFallbackRecommendations(searchTerm: string): RecommendationResponse 
   };
 }
 
-// Function to get trending items - MOCK IMPLEMENTATION ONLY
+// Function to get trending items - COMPLETELY ISOLATED MOCK IMPLEMENTATION 
 export const getTrendingItems = async (searchHistory: string[] = []): Promise<{ items: any[] }> => {
-  console.log('Getting trending items with search history:', searchHistory);
+  console.log('Getting mock trending items only (NO API CALLS):', searchHistory);
   
-  // IMPORTANT: DO NOT MODIFY THIS IMPLEMENTATION TO CALL ANY REAL API
-  // This endpoint does not exist in the backend - we use mock data only
-  const mockItems = [
-    {
-      id: "trend-1",
-      title: "The Rise of AI in Literature",
-      description: "How artificial intelligence is changing the way we discover and read books",
-      category: "Technology",
-      source: "Literary Review",
-      url: "https://example.com/ai-literature",
-      published_at: new Date().toISOString()
-    },
-    {
-      id: "trend-2",
-      title: "Top Summer Reads for 2025",
-      description: "The most anticipated books coming this summer",
-      category: "Reading Lists",
-      source: "BookReviews",
-      url: "https://example.com/summer-reads",
-      published_at: new Date().toISOString()
-    },
-    {
-      id: "trend-3",
-      title: "Classic Literature in the Digital Age",
-      description: "How digital platforms are bringing classics to new audiences",
-      category: "Digital",
-      source: "Literary Digest",
-      url: "https://example.com/classics-digital",
-      published_at: new Date().toISOString()
-    },
-    {
-      id: "trend-4", 
-      title: "Reading Habits in the Digital Age",
-      description: "How modern readers are adapting to new formats and platforms",
-      category: "Research",
-      source: "Book Analytics",
-      url: "https://example.com/reading-habits",
-      published_at: new Date().toISOString()
-    }
-  ];
-  
-  console.log('Returning mock trending items:', mockItems.length);
-  return { items: mockItems };
+  // Never attempt to call any API endpoints - this is mock data only
+  return {
+    items: [
+      {
+        id: "trend-1",
+        title: "The Rise of AI in Literature",
+        description: "How artificial intelligence is changing the way we discover and read books",
+        category: "Technology",
+        source: "Literary Review",
+        url: "https://example.com/ai-literature",
+        published_at: new Date().toISOString()
+      },
+      {
+        id: "trend-2",
+        title: "Top Summer Reads for 2025",
+        description: "The most anticipated books coming this summer",
+        category: "Reading Lists",
+        source: "BookReviews",
+        url: "https://example.com/summer-reads",
+        published_at: new Date().toISOString()
+      },
+      {
+        id: "trend-3",
+        title: "Classic Literature in the Digital Age",
+        description: "How digital platforms are bringing classics to new audiences",
+        category: "Digital",
+        source: "Literary Digest",
+        url: "https://example.com/classics-digital",
+        published_at: new Date().toISOString()
+      },
+      {
+        id: "trend-4", 
+        title: "Reading Habits in the Digital Age",
+        description: "How modern readers are adapting to new formats and platforms",
+        category: "Research",
+        source: "Book Analytics",
+        url: "https://example.com/reading-habits",
+        published_at: new Date().toISOString()
+      }
+    ]
+  };
 };
