@@ -39,6 +39,7 @@ function App() {
               <div className="relative mt-6">
                 <input
                   type="text"
+                  id="main-search-input"
                   placeholder="e.g., science fiction like Three Body Problem"
                   className="w-full bg-[#3a3a3a] text-white border-none rounded-full px-4 py-3"
                   onKeyDown={(e) => {
@@ -50,9 +51,11 @@ function App() {
                 <button 
                   className="absolute right-2 top-2 bg-[#d4af37] hover:bg-[#c4a030] text-black px-4 py-1 rounded-full"
                   onClick={() => {
-                    const input = document.querySelector('input');
+                    const input = document.getElementById('main-search-input') as HTMLInputElement;
                     if (input && input.value) {
                       handleSearch(input.value);
+                    } else {
+                      console.error('Search input not found or empty');
                     }
                   }}
                 >

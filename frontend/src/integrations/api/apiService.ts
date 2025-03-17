@@ -1,15 +1,44 @@
-
 import { toast } from "@/components/ui/use-toast";
 import { RecommendationResponse } from "@/types";
 
 // Get API configuration from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://alexandria-api.onrender.com';
-const API_KEY = import.meta.env.VITE_API_KEY;
+const getApiKey = () => {
+  // First try window.ENV (set by Vercel build for production)
+  if (typeof window !== 'undefined' && window.ENV?.VITE_API_KEY) {
+    return window.ENV.VITE_API_KEY;
+  }
+  // Then try import.meta.env (for local development)
+  if (import.meta.env.VITE_API_KEY) {
+    return import.meta.env.VITE_API_KEY;
+  }
+  // Default development API key - only for testing
+  return 'alexandria-dev-3245';
+};
+
+const getApiBaseUrl = () => {
+  // First try window.ENV
+  if (typeof window !== 'undefined' && window.ENV?.VITE_API_BASE_URL) {
+    return window.ENV.VITE_API_BASE_URL;
+  }
+  // Then try import.meta.env
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // Default
+  return 'https://alexandria-api.onrender.com';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+const API_KEY = getApiKey();
 
 // Log API configuration on startup (for debugging)
-console.log('API Configuration:');
+console.log('API Service Configuration:');
 console.log(`- Base URL: ${API_BASE_URL}`);
 console.log(`- API Key: ${API_KEY ? '✓ Set' : '✗ Not set'}`);
+console.log(`- API Key Value: ${API_KEY ? API_KEY.substring(0, 6) + '...' : 'Not set'}`);
+console.log(`- API Key Length: ${API_KEY ? API_KEY.length : 0}`);
+console.log(`- window.ENV:`, typeof window !== 'undefined' ? window.ENV : 'Not in browser');
+console.log(`- import.meta.env.VITE_API_KEY:`, import.meta.env.VITE_API_KEY ? 'Set' : 'Not set');
 
 interface FetchOptions {
   method?: string;
