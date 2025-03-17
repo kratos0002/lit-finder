@@ -37,7 +37,12 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     console.log('- window.ENV?.VITE_API_KEY value:', windowEnvApiKey ? `${windowEnvApiKey.substring(0, 6)}...` : 'undefined');
     console.log('- import.meta.env.VITE_API_KEY exists:', !!importMetaApiKey);
     
-    const apiKey = windowEnvApiKey || importMetaApiKey || '';
+    // Default development API key - only used when no environment variable is set
+    // This is safe to include in the code as it's only for development/testing
+    const defaultDevApiKey = 'alexandria-dev-3245'; 
+    
+    // Use environment variables if available, otherwise fall back to default dev key
+    const apiKey = windowEnvApiKey || importMetaApiKey || defaultDevApiKey;
     
     // Update to use /api/recommendations as shown in the API documentation
     const url = `${apiBaseUrl}/api/recommendations`;
@@ -58,20 +63,28 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
       feedback: []
     };
     
-    console.log('Sending request to:', url);
+    console.log(`Attempting to get recommendations from API for: ${searchTerm}`);
+    console.log(`Requesting recommendations for: "${searchTerm}"`);
+    
+    // Log the final configuration for this request
+    console.log(`Making request to: ${url}`);
+    console.log(`With API key: ${apiKey ? '✓ Present' : '✗ Missing'} (${apiKey === defaultDevApiKey ? 'Using default dev key' : 'Using environment variable'})`);
+    console.log(`API Key source: ${windowEnvApiKey ? 'window.ENV' : importMetaApiKey ? 'import.meta.env' : 'Default fallback'}`);
+    
     console.log('With payload:', payload);
     
     // Prepare headers with API key
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      // Always include API key in headers
+      'X-API-Key': apiKey
     };
     
-    // Always add API key header if it exists and has length
+    // Log API key status
     if (apiKey && apiKey.length > 0) {
       console.log('Using API key for authentication');
-      headers['X-API-Key'] = apiKey;
     } else {
-      console.warn('API key is empty or missing - this may cause authentication issues');
+      console.warn('API key is empty - this may cause authentication issues');
     }
     
     // Log the final headers being sent (without showing the actual API key value)
