@@ -124,35 +124,18 @@ export const apiService = {
 /**
  * Gets book recommendations from the Alexandria API
  * @param searchTerm - The book title, author, or subject to search for
+ * @param userId - The ID of the current user
  * @returns Promise containing the recommendation response
  */
-export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
+export const getRecommendations = async (searchTerm: string, userId: string): Promise<RecommendationResponse> => {
   try {
     console.log(`Requesting recommendations for: "${searchTerm}"`);
-    
-    // Generate a random user ID for tracking
-    const userId = 'web_user_' + Math.random().toString(36).substring(2, 10);
-    
-    // Get search history from localStorage if available
-    let history: string[] = [];
-    if (typeof window !== 'undefined') {
-      try {
-        const storedHistory = localStorage.getItem('searchHistory');
-        if (storedHistory) {
-          history = JSON.parse(storedHistory);
-        }
-      } catch (e) {
-        console.warn('Could not retrieve search history:', e);
-      }
-    }
     
     // Prepare the payload
     const payload = {
       user_id: userId,
       search_term: searchTerm,
-      history: history.slice(0, 5), // Only use the 5 most recent searches
-      feedback: [], // Add empty feedback
-      max_results: 10 // Request up to 10 recommendations
+      max_results: 10
     };
     
     console.log('Recommendation payload prepared:', payload);
@@ -161,6 +144,68 @@ export const getRecommendations = async (searchTerm: string): Promise<Recommenda
     return await apiService.post('/api/recommendations', payload);
   } catch (error) {
     console.error('Error fetching recommendations from API:', error);
+    throw error;
+  }
+};
+
+/**
+ * Gets all books saved by a user
+ * @param userId - The ID of the current user
+ * @returns Promise containing the list of saved books
+ */
+export const getSavedBooks = async (userId: string): Promise<any[]> => {
+  try {
+    console.log(`Fetching saved books for user: "${userId}"`);
+    return await apiService.get(`/api/recommendations/saved/${userId}`);
+  } catch (error) {
+    console.error('Error fetching saved books:', error);
+    throw error;
+  }
+};
+
+/**
+ * Saves a book to a user's collection
+ * @param userId - The ID of the current user
+ * @param bookId - The ID of the book to save
+ * @returns Promise containing the save operation result
+ */
+export const saveBook = async (userId: string, bookId: string): Promise<any> => {
+  try {
+    console.log(`Saving book ${bookId} for user: "${userId}"`);
+    return await apiService.post('/api/recommendations/save', {
+      user_id: userId,
+      book_id: bookId
+    });
+  } catch (error) {
+    console.error('Error saving book:', error);
+    throw error;
+  }
+};
+
+/**
+ * Saves user feedback for improving recommendations
+ * @param userId - The ID of the current user
+ * @param feedbackType - The type of feedback (e.g., 'like', 'dislike', 'search')
+ * @param message - The feedback message
+ * @param bookId - Optional ID of the book the feedback is about
+ * @returns Promise containing the feedback operation result
+ */
+export const saveFeedback = async (
+  userId: string,
+  feedbackType: string,
+  message: string,
+  bookId?: string
+): Promise<any> => {
+  try {
+    console.log(`Saving feedback for user: "${userId}"`);
+    return await apiService.post('/api/recommendations/feedback', {
+      user_id: userId,
+      feedback_type: feedbackType,
+      message,
+      book_id: bookId
+    });
+  } catch (error) {
+    console.error('Error saving feedback:', error);
     throw error;
   }
 };

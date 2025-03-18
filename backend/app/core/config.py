@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     LIBRARYTHING_API_KEY: Optional[str] = None
     GROK_API_KEY: Optional[str] = None  # Added Grok API key
     
+    # Supabase settings
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_KEY: Optional[str] = None
+    SUPABASE_ENABLED: bool = False  # Toggle for Supabase persistence features
+    
     # Test settings
     USE_REAL_APIS: bool = False  # Flag to indicate if real APIs should be used in tests
     
@@ -33,7 +38,7 @@ class Settings(BaseSettings):
     
     # Performance settings
     MAX_CONCURRENT_REQUESTS: int = 10
-    REQUEST_TIMEOUT: int = 30  # Request timeout in seconds
+    REQUEST_TIMEOUT: int = 60  # Request timeout in seconds
     
     # Recommendation settings
     MAX_RECOMMENDATIONS: int = 10

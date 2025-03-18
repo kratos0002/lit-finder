@@ -12,6 +12,7 @@ from app.services.openai_service import OpenAIService
 from app.services.claude_service import ClaudeService
 from app.services.database_service import DatabaseService
 from app.services.cache import cached
+from .supabase_service import supabase_service
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class RecommendationEngine:
         self.openai_service = OpenAIService()
         self.claude_service = ClaudeService()
         self.database_service = DatabaseService()
+        self.supabase = supabase_service
     
     @cached("recommendation_engine")
     async def get_recommendations(
@@ -532,3 +534,140 @@ class RecommendationEngine:
                 break
         
         return diverse_items 
+
+    async def store_search_results(self, user_id: str, search_term: str, results: List[Dict[str, Any]]) -> None:
+        """Store search results in the database"""
+        if not settings.SUPABASE_ENABLED:
+            logger.info("Supabase is disabled, skipping search results storage")
+            return
+
+        try:
+            # Store each book result
+            for result in results:
+                # First save the book if it doesn't exist
+                book_data = {
+                    'id': result.get('id'),
+                    'title': result.get('title'),
+                    'author': result.get('author'),
+                    'description': result.get('description'),
+                    'summary': result.get('summary'),
+                    'category': result.get('category'),
+                    'match_score': result.get('match_score'),
+                    'publication_date': result.get('publication_date'),
+                    'cover_image': result.get('cover_image'),
+                    'source': result.get('source')
+                }
+                await self.supabase.save_book(book_data)
+
+                # Store user interaction
+                await self.supabase.save_user_feedback(
+                    user_id=user_id,
+                    feedback_type='search',
+                    message=f"Searched for '{search_term}' and viewed '{result.get('title')}'"
+                )
+        except Exception as e:
+            logger.error(f"Failed to store search results: {e}")
+
+    async def save_book_for_user(self, user_id: str, book_id: str) -> bool:
+        """Save a book to a user's collection"""
+        if not settings.SUPABASE_ENABLED:
+            logger.info("Supabase is disabled, skipping book save")
+            return False
+
+        try:
+            result = await self.supabase.save_book_for_user(user_id, book_id)
+            if result:
+                await self.supabase.save_user_feedback(
+                    user_id=user_id,
+                    feedback_type='save',
+                    message=f"Saved book with ID: {book_id}"
+                )
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to save book for user: {e}")
+            return False
+
+    async def get_personalized_recommendations(
+        self,
+        user_id: str,
+        search_term: str,
+        base_results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Get personalized recommendations based on user preferences"""
+        if not settings.SUPABASE_ENABLED:
+            logger.info("Supabase is disabled, returning base recommendations")
+            return base_results
+
+        try:
+            # Get user preferences
+            preferences = await self.supabase.get_user_preferences(user_id)
+            if not preferences:
+                return base_results
+
+            # Apply personalization based on preferences
+            personalized_results = []
+            for result in base_results:
+                # Calculate personalization score
+                personalization_score = 0
+                
+                # Check author match
+                author = result.get('author')
+                if author and author in preferences['favorite_authors']:
+                    personalization_score += preferences['favorite_authors'][author] * 0.5
+
+                # Check category match
+                category = result.get('category')
+                if category and category in preferences['favorite_categories']:
+                    personalization_score += preferences['favorite_categories'][category] * 0.3
+
+                # Add personalization score to match score
+                result['match_score'] = result.get('match_score', 0) + personalization_score
+                personalized_results.append(result)
+
+            # Sort by updated match score
+            personalized_results.sort(key=lambda x: x.get('match_score', 0), reverse=True)
+            return personalized_results
+
+        except Exception as e:
+            logger.error(f"Failed to get personalized recommendations: {e}")
+            return base_results
+
+    async def save_user_feedback(
+        self,
+        user_id: str,
+        feedback_type: str,
+        message: str,
+        book_id: Optional[str] = None
+    ) -> bool:
+        """Save user feedback for improving recommendations"""
+        if not settings.SUPABASE_ENABLED:
+            logger.info("Supabase is disabled, skipping feedback storage")
+            return False
+
+        try:
+            result = await self.supabase.save_user_feedback(
+                user_id=user_id,
+                feedback_type=feedback_type,
+                message=message
+            )
+            return bool(result)
+        except Exception as e:
+            logger.error(f"Failed to save user feedback: {e}")
+            return False
+
+    async def get_user_saved_books(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all books saved by a user"""
+        if not settings.SUPABASE_ENABLED:
+            logger.info("Supabase is disabled, returning empty saved books list")
+            return []
+
+        try:
+            result = await self.supabase.get_user_saved_books(user_id)
+            return result or []
+        except Exception as e:
+            logger.error(f"Failed to get user saved books: {e}")
+            return []
+
+# Create a singleton instance
+recommendation_engine = RecommendationEngine() 
