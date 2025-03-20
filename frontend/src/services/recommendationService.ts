@@ -3,13 +3,20 @@ import { getRecommendations as apiGetRecommendations } from "@/integrations/api/
 import { mockReviews, mockSocialPosts } from "@/data/mockData";
 import { searchBooks } from "@/services/bookService";
 
+// Generate a random user ID
+const generateUserId = () => `web_user_${Math.random().toString(36).substring(2, 10)}`;
+
 // Export a function that tries the API first, then falls back to mock
 export const getRecommendations = async (searchTerm: string): Promise<RecommendationResponse> => {
   try {
     console.log('RecommendationService: Attempting to get recommendations from API for:', searchTerm);
     
-    // First try the actual API
-    const apiResponse = await apiGetRecommendations(searchTerm);
+    // Generate a user ID to ensure we have a valid ID
+    const userId = generateUserId();
+    console.log('Using user ID:', userId);
+    
+    // First try the actual API with the user ID
+    const apiResponse = await apiGetRecommendations(searchTerm, userId);
     
     // Improved validation to check for empty or invalid responses
     if (apiResponse && 
