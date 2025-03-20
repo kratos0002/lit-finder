@@ -10,6 +10,15 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "BookService"
     API_V1_STR: str = "/api"
     
+    # CORS settings
+    CORS_ORIGINS: List[str] = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://lit-finder.onrender.com",
+        "https://bookservice.onrender.com"
+    ]
+    
     # API Keys
     OPENAI_API_KEY: Optional[str] = None
     PERPLEXITY_API_KEY: Optional[str] = None
