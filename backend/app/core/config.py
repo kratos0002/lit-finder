@@ -16,7 +16,8 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:5173",
         "https://lit-finder.onrender.com",
-        "https://bookservice.onrender.com"
+        "https://bookservice.onrender.com",
+        "https://lit-finder-frontend-new.vercel.app"
     ]
     
     # API Keys
