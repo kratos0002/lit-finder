@@ -2,6 +2,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BookMarked, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 export interface TrendingItem {
   id: string;
@@ -22,14 +24,21 @@ interface TrendingCardProps {
 }
 
 export function TrendingCard({ item, onSave, isSaved = false }: TrendingCardProps) {
+  const { toast } = useToast();
+  
   const handleSave = () => {
     if (onSave) {
       onSave(item);
+      toast({
+        title: isSaved ? "Removed from saved items" : "Added to your collection",
+        description: isSaved ? `"${item.title}" has been removed` : `"${item.title}" has been saved to your collection`,
+        variant: isSaved ? "destructive" : "default"
+      });
     }
   };
 
   return (
-    <div className="group relative flex flex-col overflow-hidden h-full">
+    <div className="group relative flex flex-col overflow-hidden rounded-lg border border-purple-500/20 bg-black/40 backdrop-blur-sm h-full transition-all hover:border-purple-500/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
       <div className="p-5 flex flex-col h-full">
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
@@ -41,9 +50,9 @@ export function TrendingCard({ item, onSave, isSaved = false }: TrendingCardProp
         <p className="mt-2 text-sm text-gray-300 line-clamp-3 flex-grow">{item.description}</p>
         
         <div className="mt-4 flex justify-between items-center pt-3 border-t border-purple-500/20">
-          <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-medium text-purple-300 border border-purple-500/20">
+          <Badge variant="outline" className="bg-purple-500/10 text-purple-300 border-purple-500/20">
             {item.category}
-          </span>
+          </Badge>
           
           <div className="flex gap-2">
             <Button
