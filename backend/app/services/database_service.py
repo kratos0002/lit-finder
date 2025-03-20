@@ -20,12 +20,9 @@ class DatabaseService:
         self.librarything_api_key = settings.LIBRARYTHING_API_KEY
         self.timeout = httpx.Timeout(settings.REQUEST_TIMEOUT)
         
-        # Check if API keys are available
-        self.goodreads_available = bool(self.goodreads_api_key)
-        self.librarything_available = bool(self.librarything_api_key)
-        
-        if not any([self.goodreads_available, self.librarything_available]):
-            logger.warning("No book database API keys provided. Using fallback data only.")
+        # Adjust logic to handle optional keys
+        self.goodreads_available = False
+        self.librarything_available = False
     
     @cached("database_enrich_recommendations")
     async def enrich_recommendations(self, search_term: str, book_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
