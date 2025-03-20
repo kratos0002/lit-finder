@@ -1,10 +1,11 @@
+import logging
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-import logging
-import time
-from datetime import datetime
+from contextlib import asynccontextmanager
 
 from app.api.routers import recommendations, health, stats
+from app.services.recommendation_engine import RecommendationEngine
+from app.services.recommendation_service import RecommendationService
 from app.core.config import settings
 
 # Configure logging
@@ -14,45 +15,65 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Create global instances of services
+recommendation_engine = RecommendationEngine()
+recommendation_service = RecommendationService(recommendation_engine=recommendation_engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan event handler for FastAPI app.
+    Handles startup and shutdown events.
+    """
+    # Startup
+    logger.info("Starting application")
+    
+    # Shutdown
+    yield
+    logger.info("Shutting down application")
+
 # Create FastAPI application
 app = FastAPI(
-    title=settings.PROJECT_NAME,
-    description="AI-Powered Book Recommendation Engine",
+    title="Alexandria Library API",
+    description="AI-powered book recommendation service",
     version="1.0.0",
+    lifespan=lifespan
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict in production
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Add request timing middleware
-@app.middleware("http")
-async def add_process_time_header(request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    logger.info(f"Request processed in {process_time:.4f} seconds")
-    return response
+# Dependency to get recommendation service
+def get_recommendation_service():
+    """Dependency to get recommendation service."""
+    return recommendation_service
 
 # Include routers
-app.include_router(recommendations.router, prefix="/api", tags=["recommendations"])
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(stats.router, prefix="/api", tags=["stats"])
+app.include_router(
+    recommendations.router, 
+    prefix="/api", 
+    tags=["recommendations"],
+    dependencies=[Depends(get_recommendation_service)]
+)
 
 @app.get("/")
 async def root():
-    """Root endpoint that redirects to docs."""
-    return {
-        "message": "Welcome to the Book Recommendation Engine API",
-        "documentation": "/docs",
-        "current_time": datetime.now().isoformat(),
-    }
+    """Root endpoint that redirects to documentation."""
+    return {"message": "Welcome to Alexandria Library API! See /docs for documentation."}
+
+# Handle exceptions
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    """Handle HTTP exceptions."""
+    return {"detail": exc.detail, "status_code": exc.status_code}
 
 if __name__ == "__main__":
     import uvicorn

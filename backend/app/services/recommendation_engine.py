@@ -33,202 +33,646 @@ class RecommendationEngine:
         user_id: str, 
         search_term: str, 
         history: Optional[List[str]] = None, 
-        feedback: Optional[List[Dict[str, Any]]] = None
+        feedback: Optional[List[Dict[str, Any]]] = None,
+        tier: str = "standard",  # Add tier parameter with default "standard"
+        progressive: bool = False  # Add progressive loading parameter
     ) -> Dict[str, Any]:
         """
-        Get recommendations using the hybrid approach.
+        Get recommendations using the hybrid approach with tiered response strategy.
         
         Args:
             user_id: The user ID.
             search_term: The search term.
             history: Optional list of previous search terms.
             feedback: Optional list of user feedback items.
+            tier: Service tier ("fast", "standard", or "comprehensive")
+            progressive: Whether to support progressive loading
             
         Returns:
             Dictionary with recommendations.
         """
-        logger.info(f"Getting recommendations for user {user_id} with search term: {search_term}")
+        logger.info(f"Getting recommendations for user {user_id} with search term: {search_term}, tier: {tier}")
+        start_time = datetime.now()
+        
+        # Cache key should incorporate user preferences and tier for personalization
+        cache_key = f"recommendations:{search_term}:{user_id}:{tier}"
+        
+        try:
+            # Set timeout thresholds based on tier
+            timeouts = {
+                "fast": 5.0,
+                "standard": 15.0, 
+                "comprehensive": 40.0
+            }.get(tier, 15.0)
+            
+            # Keep track of the progressive response handler if provided
+            self.progressive_handler = getattr(asyncio.current_task(), "progressive_handler", None)
+            
+            # FAST TIER PROCESSING - Basic book recommendations only
+            basic_results = await self._get_basic_recommendations(search_term, user_id)
+            
+            # If we're in fast tier or have progressive loading, return/send basic results
+            if tier == "fast":
+                processing_time = (datetime.now() - start_time).total_seconds()
+                logger.info(f"Fast tier recommendations generated in {processing_time:.2f} seconds")
+                return basic_results
+            
+            # If progressive loading enabled, send basic results while continuing processing
+            if progressive and self.progressive_handler:
+                await self.progressive_handler(basic_results, final=False)
+                logger.info("Sent progressive partial results")
+                
+            # STANDARD TIER PROCESSING - Add reviews, social content, basic insights
+            if tier in ["standard", "comprehensive"]:
+                standard_results = await self._enhance_with_standard_features(
+                    basic_results, search_term, user_id, timeouts["standard"]
+                )
+                
+                # If we're in standard tier, return results here
+                if tier == "standard":
+                    processing_time = (datetime.now() - start_time).total_seconds()
+                    logger.info(f"Standard tier recommendations generated in {processing_time:.2f} seconds")
+                    return standard_results
+                    
+                # If progressive loading enabled, send standard results while continuing
+                if progressive and self.progressive_handler:
+                    await self.progressive_handler(standard_results, final=False)
+                    logger.info("Sent progressive standard results")
+            
+            # COMPREHENSIVE TIER PROCESSING - Add literary analysis and full enrichment
+            if tier == "comprehensive":
+                comprehensive_results = await self._enhance_with_comprehensive_features(
+                    standard_results, search_term, user_id, timeouts["comprehensive"]
+                )
+                
+                processing_time = (datetime.now() - start_time).total_seconds()
+                logger.info(f"Comprehensive tier recommendations generated in {processing_time:.2f} seconds")
+                return comprehensive_results
+                
+            # Default return the standard results if we get here
+            return standard_results
+            
+        except Exception as e:
+            logger.error(f"Error generating recommendations: {e}")
+            # Return a minimal response in case of error
+            error_response = {
+                "top_book": None,
+                "top_review": None,
+                "top_social": None,
+                "recommendations": [],
+                "metadata": {
+                    "error": str(e),
+                    "search_term": search_term,
+                    "processing_time_ms": (datetime.now() - start_time).total_seconds() * 1000,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+            
+            # If progressive, send error response
+            if progressive and self.progressive_handler:
+                await self.progressive_handler(error_response, final=True)
+                
+            return error_response
+
+    @cached("recommendations_basic", ttl=3600)
+    async def _get_basic_recommendations(self, search_term: str, user_id: str) -> Dict[str, Any]:
+        """
+        Get basic book recommendations (fast tier).
+        
+        Args:
+            search_term: The search term.
+            user_id: The user ID.
+            
+        Returns:
+            Dictionary with basic recommendations.
+        """
         start_time = datetime.now()
         
         try:
-            # Step 1: Get initial recommendations from Perplexity
-            book_items, review_items, social_items = await self.perplexity_service.get_initial_recommendations(search_term)
-            logger.info(f"Retrieved initial recommendations: {len(book_items)} books, {len(review_items)} reviews, {len(social_items)} social posts")
+            # Setup circuit breaker
+            circuit_open = self._check_circuit_breaker("perplexity_api")
             
-            # ALWAYS check if we got valid data and use mock data if not
+            # Step 1: Get initial recommendations with timeout
+            if not circuit_open:
+                try:
+                    # Set a shorter timeout for the fast path
+                    book_items, _, _ = await asyncio.wait_for(
+                        self.perplexity_service.get_initial_recommendations(search_term),
+                        timeout=3.0  # Short timeout for fast path
+                    )
+                    logger.info(f"Retrieved {len(book_items)} initial book recommendations")
+                except (asyncio.TimeoutError, Exception) as e:
+                    logger.error(f"Error or timeout getting initial recommendations: {e}")
+                    self._record_circuit_breaker_failure("perplexity_api")
+                    book_items = []
+            else:
+                logger.warning("Circuit breaker open for perplexity_api, using mock data")
+                book_items = []
+                
+            # Fallback to mock data if needed
             if not book_items:
                 logger.warning("No books returned from API, using mock data")
                 book_items = self._generate_mock_books(search_term)
                 logger.info(f"Generated {len(book_items)} mock books")
             
-            if not review_items:
-                logger.warning("No reviews returned from API, using mock data")
-                review_items = self._generate_mock_reviews(search_term)
-                logger.info(f"Generated {len(review_items)} mock reviews")
-            
-            if not social_items:
-                logger.warning("No social posts returned from API, using mock data")
-                social_items = self._generate_mock_social_posts(search_term)
-                logger.info(f"Generated {len(social_items)} mock social posts")
-            
-            # Step 2: Search additional books from databases
-            additional_books = await self.database_service.search_additional_books(search_term)
-            logger.info(f"Retrieved {len(additional_books)} additional books from databases")
-            
-            # Combine all book items
-            all_book_items = book_items + additional_books
-            
-            # If we still don't have any books, use more comprehensive mock data
-            if not all_book_items:
-                logger.warning("No books found in any source, using comprehensive mock data")
-                all_book_items = self._generate_comprehensive_mock_books(search_term)
-                logger.info(f"Generated {len(all_book_items)} comprehensive mock books")
-            
-            # Step 3: Deduplicate books
-            deduplicated_books, removed_count = self._deduplicate_items(all_book_items)
+            # Step 2: Deduplicate books
+            deduplicated_books, removed_count = self._deduplicate_items(book_items)
             logger.info(f"Deduplicated books: {len(deduplicated_books)} unique items, {removed_count} duplicates removed")
             
-            # Skip AI processing for mock data to improve performance
-            if all(book.get("source", "") == "mock" for book in deduplicated_books):
-                logger.info("Using mock data only, skipping AI processing")
-                sorted_books = sorted(deduplicated_books, key=lambda x: x.get("match_score", 0), reverse=True)
-                top_book = sorted_books[0] if sorted_books else None
-                
-                # Sort reviews and social items
-                sorted_reviews = sorted(review_items, key=lambda x: random.random(), reverse=True)
-                sorted_social = sorted(social_items, key=lambda x: random.random(), reverse=True)
-                
-                top_review = sorted_reviews[0] if sorted_reviews else None
-                top_social = sorted_social[0] if sorted_social else None
-                
-                # Generate mock literary analysis and insights
-                mock_insights = self._generate_mock_insights(search_term)
-                mock_literary_analysis = self._generate_mock_literary_analysis(search_term)
-                
-                # Build response with mock data
-                response = {
-                    "top_book": top_book,
-                    "top_review": top_review,
-                    "top_social": top_social,
-                    "recommendations": sorted_books[:settings.MAX_RECOMMENDATIONS],
-                    "insights": mock_insights,
-                    "literary_analysis": mock_literary_analysis, 
-                    "metadata": {
-                        "search_term": search_term,
-                        "total_results": len(sorted_books),
-                        "processing_time_ms": (datetime.now() - start_time).total_seconds() * 1000,
-                        "timestamp": datetime.now().isoformat(),
-                        "duplicates_removed": removed_count,
-                        "source": "mock"
-                    }
-                }
-                
-                logger.info(f"Mock recommendations generated in {(datetime.now() - start_time).total_seconds():.2f} seconds")
-                return response
+            # Step 3: Basic semantic scoring - simplified for speed
+            scored_books = self._quick_semantic_scoring(deduplicated_books, search_term)
             
-            # Continue with normal AI processing for real data
-            try:
-                # Step 4: Enhance with Claude to infer categories
-                categorized_books = await self.claude_service.infer_categories(deduplicated_books)
-                logger.info(f"Inferred categories for books")
-                
-                # Step 5: Refine with OpenAI semantic analysis
-                refined_books = await self.openai_service.analyze_semantic_match(search_term, categorized_books)
-                logger.info(f"Refined books with semantic analysis")
-                
-                # Step 6: Cross-validate with user feedback if available
-                if feedback:
-                    validated_books = await self.openai_service.cross_validate_with_user_feedback(
-                        search_term, refined_books, feedback
-                    )
-                    logger.info(f"Cross-validated books with user feedback")
-                else:
-                    validated_books = refined_books
-                
-                # Step 7: Cross-validate with Claude for accuracy
-                final_books = await self.claude_service.cross_validate_recommendations(search_term, validated_books)
-                logger.info(f"Cross-validated books for accuracy")
-                
-                # Step 8: Enrich with database metadata
-                enriched_books = await self.database_service.enrich_recommendations(search_term, final_books)
-                logger.info(f"Enriched books with database metadata")
-                
-                # Step 9: Ensure diversity
-                diverse_books = self._ensure_diversity(enriched_books)
-                logger.info(f"Ensured diversity: final recommendation set has {len(diverse_books)} books")
-                
-                # Step 10: Get contextual insights from Claude
-                insights = await self.claude_service.generate_contextual_insights(search_term, diverse_books[:5])
-                logger.info(f"Generated contextual insights for recommendations")
-                
-                # Step 11: Rank and select top items
-                sorted_books = sorted(diverse_books, key=lambda x: x.get("match_score", 0), reverse=True)
-            except Exception as e:
-                logger.error(f"Error in AI processing pipeline: {e}")
-                logger.info("Falling back to mock data due to AI processing error")
-                sorted_books = sorted(deduplicated_books, key=lambda x: x.get("match_score", 0), reverse=True)
-                insights = self._generate_mock_insights(search_term)
+            # Step 4: Ensure diversity in recommendations
+            sorted_books = sorted(scored_books, key=lambda x: x.get("match_score", 0), reverse=True)
+            diverse_books = self._ensure_diversity(sorted_books)
+            logger.info(f"Ensured diversity: final recommendation set has {len(diverse_books)} books")
             
-            top_book = sorted_books[0] if sorted_books else None
+            # Get top book
+            top_book = diverse_books[0] if diverse_books else None
             
-            # Sort reviews and social items by relevance
-            sorted_reviews = sorted(review_items, key=lambda x: random.random(), reverse=True)
-            sorted_social = sorted(social_items, key=lambda x: random.random(), reverse=True)
-            
-            top_review = sorted_reviews[0] if sorted_reviews else None
-            top_social = sorted_social[0] if sorted_social else None
-            
-            # Step 12: Get literary analysis
-            try:
-                literary_analysis = await self.perplexity_service.get_literary_analysis(search_term)
-                logger.info(f"Retrieved literary analysis")
-            except Exception as e:
-                logger.error(f"Error getting literary analysis: {e}")
-                literary_analysis = self._generate_mock_literary_analysis(search_term)
-            
-            # Build final response
+            # Build basic response
             response = {
                 "top_book": top_book,
-                "top_review": top_review,
-                "top_social": top_social,
-                "recommendations": sorted_books[:settings.MAX_RECOMMENDATIONS],
-                "insights": insights,
-                "literary_analysis": literary_analysis,
+                "recommendations": diverse_books[:settings.MAX_RECOMMENDATIONS],
                 "metadata": {
                     "search_term": search_term,
-                    "total_results": len(sorted_books),
+                    "total_results": len(diverse_books),
                     "processing_time_ms": (datetime.now() - start_time).total_seconds() * 1000,
                     "timestamp": datetime.now().isoformat(),
+                    "tier": "fast",
                     "duplicates_removed": removed_count
                 }
             }
             
-            logger.info(f"Recommendations generated in {(datetime.now() - start_time).total_seconds():.2f} seconds")
             return response
-        
-        except Exception as e:
-            logger.error(f"Error generating recommendations: {e}")
-            # Return mock data in case of error
-            mock_books = self._generate_comprehensive_mock_books(search_term)
-            mock_reviews = self._generate_mock_reviews(search_term)
-            mock_social = self._generate_mock_social_posts(search_term)
             
+        except Exception as e:
+            logger.error(f"Error generating basic recommendations: {e}")
             return {
-                "top_book": mock_books[0] if mock_books else None,
-                "top_review": mock_reviews[0] if mock_reviews else None,
-                "top_social": mock_social[0] if mock_social else None,
-                "recommendations": mock_books[:settings.MAX_RECOMMENDATIONS],
-                "insights": self._generate_mock_insights(search_term),
-                "literary_analysis": self._generate_mock_literary_analysis(search_term),
+                "top_book": None,
+                "recommendations": [],
                 "metadata": {
                     "error": str(e),
                     "search_term": search_term,
-                    "processing_time_ms": (datetime.now() - start_time).total_seconds() * 1000,
-                    "timestamp": datetime.now().isoformat(),
-                    "source": "mock"
+                    "tier": "fast",
+                    "timestamp": datetime.now().isoformat()
                 }
             }
     
+    async def _enhance_with_standard_features(
+        self, 
+        basic_results: Dict[str, Any], 
+        search_term: str, 
+        user_id: str,
+        timeout: float = 15.0
+    ) -> Dict[str, Any]:
+        """
+        Enhance basic recommendations with standard tier features.
+        
+        Args:
+            basic_results: The basic recommendation results.
+            search_term: The search term.
+            user_id: The user ID.
+            timeout: Maximum time for standard enhancements.
+            
+        Returns:
+            Enhanced recommendations with standard features.
+        """
+        start_time = datetime.now()
+        standard_results = basic_results.copy()
+        standard_results["metadata"]["tier"] = "standard"
+        
+        try:
+            # Create tasks for parallel processing
+            tasks = [
+                self._get_reviews_and_social(search_term),
+                self._get_basic_insights(search_term, basic_results.get("recommendations", []))
+            ]
+            
+            # Wait for all tasks with timeout
+            results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=timeout)
+            
+            # Process review and social results
+            if results[0] and not isinstance(results[0], Exception):
+                review_items, social_items = results[0]
+                
+                # Sort reviews by match score
+                sorted_reviews = sorted(review_items, key=lambda x: x.get("match_score", 0.0), reverse=True) if review_items else []
+                
+                # Sort social posts by match score
+                sorted_social = sorted(social_items, key=lambda x: x.get("match_score", 0.0), reverse=True) if social_items else []
+                
+                standard_results["top_review"] = sorted_reviews[0] if sorted_reviews else None
+                standard_results["top_social"] = sorted_social[0] if sorted_social else None
+                standard_results["reviews"] = sorted_reviews[:3]
+                standard_results["social"] = sorted_social[:3]
+            else:
+                logger.warning(f"Error getting reviews and social: {results[0] if isinstance(results[0], Exception) else 'Unknown error'}")
+                
+            # Process basic insights
+            if results[1] and not isinstance(results[1], Exception):
+                standard_results["insights"] = results[1]
+            else:
+                logger.warning(f"Error getting basic insights: {results[1] if isinstance(results[1], Exception) else 'Unknown error'}")
+                standard_results["insights"] = {"thematic_connections": [], "reading_pathways": []}
+                
+            # Update processing time
+            standard_results["metadata"]["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+            
+            return standard_results
+            
+        except asyncio.TimeoutError:
+            logger.warning(f"Timeout while enhancing with standard features after {timeout} seconds")
+            # Return what we have so far
+            standard_results["metadata"]["timeout"] = True
+            standard_results["metadata"]["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+            return standard_results
+            
+        except Exception as e:
+            logger.error(f"Error enhancing with standard features: {e}")
+            standard_results["metadata"]["error"] = str(e)
+            standard_results["metadata"]["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+            return standard_results
+    
+    async def _enhance_with_comprehensive_features(
+        self, 
+        standard_results: Dict[str, Any], 
+        search_term: str, 
+        user_id: str,
+        timeout: float = 40.0
+    ) -> Dict[str, Any]:
+        """
+        Enhance standard recommendations with comprehensive tier features.
+        
+        Args:
+            standard_results: The standard recommendation results.
+            search_term: The search term.
+            user_id: The user ID.
+            timeout: Maximum time for comprehensive enhancements.
+            
+        Returns:
+            Enhanced recommendations with comprehensive features.
+        """
+        start_time = datetime.now()
+        comprehensive_results = standard_results.copy()
+        comprehensive_results["metadata"]["tier"] = "comprehensive"
+        
+        try:
+            # Create tasks for parallel processing of advanced features
+            tasks = [
+                self._get_literary_analysis_with_circuit_breaker(search_term),
+                self._get_advanced_insights(search_term, standard_results.get("recommendations", [])),
+                self._cross_validate_recommendations(standard_results.get("recommendations", []), search_term)
+            ]
+            
+            # Wait for all tasks with timeout
+            results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=timeout)
+            
+            # Process literary analysis
+            if results[0] and not isinstance(results[0], Exception):
+                comprehensive_results["literary_analysis"] = results[0]
+            else:
+                logger.warning(f"Error getting literary analysis: {results[0] if isinstance(results[0], Exception) else 'Unknown error'}")
+                comprehensive_results["literary_analysis"] = self._generate_mock_literary_analysis(search_term)
+                
+            # Process advanced insights
+            if results[1] and not isinstance(results[1], Exception):
+                # Merge with existing insights
+                existing_insights = comprehensive_results.get("insights", {})
+                advanced_insights = results[1]
+                merged_insights = {**existing_insights, **advanced_insights}
+                comprehensive_results["insights"] = merged_insights
+            else:
+                logger.warning(f"Error getting advanced insights: {results[1] if isinstance(results[1], Exception) else 'Unknown error'}")
+                
+            # Process cross-validated recommendations
+            if results[2] and not isinstance(results[2], Exception):
+                # Replace recommendations with cross-validated ones
+                comprehensive_results["recommendations"] = results[2]
+            else:
+                logger.warning(f"Error cross-validating recommendations: {results[2] if isinstance(results[2], Exception) else 'Unknown error'}")
+                
+            # Update processing time
+            comprehensive_results["metadata"]["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+            
+            return comprehensive_results
+            
+        except asyncio.TimeoutError:
+            logger.warning(f"Timeout while enhancing with comprehensive features after {timeout} seconds")
+            # Return what we have so far
+            comprehensive_results["metadata"]["timeout"] = True
+            comprehensive_results["metadata"]["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+            return comprehensive_results
+            
+        except Exception as e:
+            logger.error(f"Error enhancing with comprehensive features: {e}")
+            comprehensive_results["metadata"]["error"] = str(e)
+            comprehensive_results["metadata"]["processing_time_ms"] = (datetime.now() - start_time).total_seconds() * 1000
+            return comprehensive_results
+    
+    async def _get_reviews_and_social(self, search_term: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """
+        Get review and social media recommendations.
+        
+        Args:
+            search_term: The search term.
+            
+        Returns:
+            Tuple of (review_items, social_items).
+        """
+        try:
+            # Check circuit breaker
+            if self._check_circuit_breaker("perplexity_reviews_social"):
+                logger.warning("Circuit breaker open for perplexity_reviews_social, using mock data")
+                return self._generate_mock_reviews(search_term), self._generate_mock_social_posts(search_term)
+                
+            # Make API call with timeout
+            try:
+                _, review_items, social_items = await asyncio.wait_for(
+                    self.perplexity_service.get_initial_recommendations(search_term),
+                    timeout=5.0
+                )
+            except (asyncio.TimeoutError, Exception) as e:
+                logger.error(f"Error or timeout getting reviews and social posts: {e}")
+                self._record_circuit_breaker_failure("perplexity_reviews_social")
+                review_items, social_items = [], []
+            
+            # Fallback to mock data if needed
+            if not review_items:
+                logger.warning("No reviews returned from API, using mock data")
+                review_items = self._generate_mock_reviews(search_term)
+                
+            if not social_items:
+                logger.warning("No social posts returned from API, using mock data")
+                social_items = self._generate_mock_social_posts(search_term)
+                
+            return review_items, social_items
+            
+        except Exception as e:
+            logger.error(f"Error getting reviews and social posts: {e}")
+            return self._generate_mock_reviews(search_term), self._generate_mock_social_posts(search_term)
+    
+    async def _get_basic_insights(
+        self, 
+        search_term: str, 
+        recommendations: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Get basic insights for recommendations.
+        
+        Args:
+            search_term: The search term.
+            recommendations: The recommended items.
+            
+        Returns:
+            Dictionary with basic insights.
+        """
+        try:
+            # For speed, we'll just provide thematic connections and reading pathways
+            # This is a simplified version of the full insights
+            basic_insights = {
+                "thematic_connections": self._generate_thematic_connections(search_term, recommendations),
+                "reading_pathways": self._generate_reading_pathways(recommendations)
+            }
+            
+            return basic_insights
+            
+        except Exception as e:
+            logger.error(f"Error generating basic insights: {e}")
+            return {
+                "thematic_connections": [],
+                "reading_pathways": []
+            }
+    
+    async def _get_advanced_insights(
+        self, 
+        search_term: str, 
+        recommendations: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Get advanced insights for recommendations.
+        
+        Args:
+            search_term: The search term.
+            recommendations: The recommended items.
+            
+        Returns:
+            Dictionary with advanced insights.
+        """
+        try:
+            # Check circuit breaker
+            if self._check_circuit_breaker("claude_insights"):
+                logger.warning("Circuit breaker open for claude_insights, using mock data")
+                return self._generate_mock_insights(search_term)
+                
+            # Make API call with timeout
+            try:
+                insights = await asyncio.wait_for(
+                    self.claude_service.generate_contextual_insights(search_term, recommendations),
+                    timeout=10.0
+                )
+                return insights
+            except (asyncio.TimeoutError, Exception) as e:
+                logger.error(f"Error or timeout getting advanced insights: {e}")
+                self._record_circuit_breaker_failure("claude_insights")
+                return self._generate_mock_insights(search_term)
+                
+        except Exception as e:
+            logger.error(f"Error generating advanced insights: {e}")
+            return self._generate_mock_insights(search_term)
+    
+    async def _get_literary_analysis_with_circuit_breaker(self, search_term: str) -> str:
+        """
+        Get literary analysis with circuit breaker pattern.
+        
+        Args:
+            search_term: The search term.
+            
+        Returns:
+            Literary analysis text.
+        """
+        try:
+            # Check circuit breaker
+            if self._check_circuit_breaker("perplexity_literary_analysis"):
+                logger.warning("Circuit breaker open for perplexity_literary_analysis, using mock data")
+                return self._generate_mock_literary_analysis(search_term)
+                
+            # Make API call with timeout
+            try:
+                analysis = await asyncio.wait_for(
+                    self.perplexity_service.get_literary_analysis(search_term),
+                    timeout=8.0
+                )
+                if analysis:
+                    return analysis
+                else:
+                    logger.warning(f"Empty response from literary analysis API for {search_term}, using mock data")
+                    return self._generate_mock_literary_analysis(search_term)
+            except (asyncio.TimeoutError, Exception) as e:
+                logger.error(f"Error or timeout getting literary analysis: {e}")
+                self._record_circuit_breaker_failure("perplexity_literary_analysis")
+                return self._generate_mock_literary_analysis(search_term)
+                
+        except Exception as e:
+            logger.error(f"Error generating literary analysis: {e}")
+            return self._generate_mock_literary_analysis(search_term)
+    
+    async def _cross_validate_recommendations(
+        self, 
+        recommendations: List[Dict[str, Any]], 
+        search_term: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Cross-validate recommendations with Claude.
+        
+        Args:
+            recommendations: The recommendations to validate.
+            search_term: The search term.
+            
+        Returns:
+            Validated recommendations.
+        """
+        try:
+            # Check circuit breaker
+            if self._check_circuit_breaker("claude_validation"):
+                logger.warning("Circuit breaker open for claude_validation, returning original recommendations")
+                return recommendations
+                
+            # Make API call with timeout
+            try:
+                validated = await asyncio.wait_for(
+                    self.claude_service.cross_validate_recommendations(recommendations, search_term),
+                    timeout=10.0
+                )
+                if validated:
+                    logger.info(f"Cross-validated {len(validated)} book recommendations")
+                    return validated
+                else:
+                    return recommendations
+            except (asyncio.TimeoutError, Exception) as e:
+                logger.error(f"Error or timeout cross-validating recommendations: {e}")
+                self._record_circuit_breaker_failure("claude_validation")
+                return recommendations
+                
+        except Exception as e:
+            logger.error(f"Error cross-validating recommendations: {e}")
+            return recommendations
+    
+    def _quick_semantic_scoring(
+        self, 
+        items: List[Dict[str, Any]], 
+        search_term: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Quick semantic scoring for items.
+        
+        Args:
+            items: Items to score.
+            search_term: The search term.
+            
+        Returns:
+            Scored items.
+        """
+        search_terms = set(search_term.lower().split())
+        scored_items = []
+        
+        for item in items:
+            # Get existing score or use default
+            score = item.get("match_score", 0.5)
+            
+            # Simple keyword matching for speed
+            title = item.get("title", "").lower()
+            summary = item.get("summary", "").lower()
+            author = item.get("author", "").lower()
+            
+            # Count term matches
+            term_matches = sum(1 for term in search_terms if term in title or term in summary)
+            
+            # Adjust score based on matches
+            if term_matches > 0:
+                score = min(1.0, score + (0.1 * term_matches))
+                
+            # Extra weight for title matches
+            title_matches = sum(1 for term in search_terms if term in title)
+            if title_matches > 0:
+                score = min(1.0, score + (0.1 * title_matches))
+                
+            # Update the score
+            item["match_score"] = score
+            scored_items.append(item)
+            
+        return scored_items
+    
+    # Circuit breaker pattern implementation
+    def _check_circuit_breaker(self, service_name: str) -> bool:
+        """
+        Check if circuit breaker is open for a service.
+        
+        Args:
+            service_name: The service name.
+            
+        Returns:
+            True if circuit is open (service should not be called).
+        """
+        circuit_breakers = getattr(self, "_circuit_breakers", {})
+        
+        if service_name not in circuit_breakers:
+            # Initialize circuit breaker
+            circuit_breakers[service_name] = {
+                "failures": 0,
+                "last_failure": None,
+                "open": False,
+                "open_until": None
+            }
+            self._circuit_breakers = circuit_breakers
+            
+        breaker = circuit_breakers[service_name]
+        
+        # Check if circuit is open and timeout has elapsed
+        if breaker["open"]:
+            if breaker["open_until"] and datetime.now() > breaker["open_until"]:
+                # Reset circuit breaker
+                breaker["open"] = False
+                breaker["failures"] = 0
+                logger.info(f"Circuit breaker for {service_name} is now closed")
+                return False
+            else:
+                return True
+                
+        return False
+    
+    def _record_circuit_breaker_failure(self, service_name: str) -> None:
+        """
+        Record a failure for a service's circuit breaker.
+        
+        Args:
+            service_name: The service name.
+        """
+        circuit_breakers = getattr(self, "_circuit_breakers", {})
+        
+        if service_name not in circuit_breakers:
+            # Initialize circuit breaker
+            circuit_breakers[service_name] = {
+                "failures": 0,
+                "last_failure": None,
+                "open": False,
+                "open_until": None
+            }
+            
+        breaker = circuit_breakers[service_name]
+        
+        # Record failure
+        breaker["failures"] += 1
+        breaker["last_failure"] = datetime.now()
+        
+        # Check if we should open the circuit
+        if breaker["failures"] >= 3:  # Three strikes and you're out
+            breaker["open"] = True
+            breaker["open_until"] = datetime.now() + timedelta(minutes=5)  # 5 minute timeout
+            logger.warning(f"Circuit breaker for {service_name} is now open until {breaker['open_until']}")
+            
+        self._circuit_breakers = circuit_breakers
+
     def _generate_mock_books(self, search_term: str) -> List[Dict[str, Any]]:
         """Generate mock books for testing."""
         books = []
