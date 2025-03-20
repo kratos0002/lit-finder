@@ -1,4 +1,7 @@
+
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { BookMarked, ExternalLink } from 'lucide-react';
 
 export interface TrendingItem {
   id: string;
@@ -26,42 +29,54 @@ export function TrendingCard({ item, onSave, isSaved = false }: TrendingCardProp
   };
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow transition-all hover:shadow-md">
-      <div className="p-4">
-        <div className="flex justify-between items-start">
+    <div className="group relative flex flex-col overflow-hidden h-full">
+      <div className="p-5 flex flex-col h-full">
+        <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold line-clamp-2">{item.title}</h3>
-            <p className="text-sm text-gray-500">{item.source}</p>
-            <p className="mt-2 text-sm line-clamp-3">{item.description}</p>
+            <h3 className="text-lg font-serif font-semibold line-clamp-2 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">{item.title}</h3>
+            <p className="text-sm text-purple-300">{item.source}</p>
           </div>
         </div>
         
-        <div className="mt-4 flex justify-between items-center">
-          <div>
-            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-              {item.category}
-            </span>
-          </div>
+        <p className="mt-2 text-sm text-gray-300 line-clamp-3 flex-grow">{item.description}</p>
+        
+        <div className="mt-4 flex justify-between items-center pt-3 border-t border-purple-500/20">
+          <span className="inline-flex items-center rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-medium text-purple-300 border border-purple-500/20">
+            {item.category}
+          </span>
           
           <div className="flex gap-2">
-            <button
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+            <Button
+              size="sm"
+              variant="ghost"
+              className={`text-xs px-2 py-1 h-8 ${isSaved 
+                ? 'text-purple-300 bg-purple-500/20' 
+                : 'text-gray-300 hover:text-purple-300 hover:bg-purple-500/10'}`}
               onClick={handleSave}
             >
+              <BookMarked className="w-4 h-4 mr-1" />
               {isSaved ? 'Saved' : 'Save'}
-            </button>
+            </Button>
             
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3"
+            <Button
+              size="sm"
+              variant="default"
+              className="text-xs bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 px-2 py-1 h-8"
+              asChild
             >
-              Read
-            </a>
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center"
+              >
+                <ExternalLink className="w-4 h-4 mr-1" />
+                Read
+              </a>
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

@@ -1,8 +1,9 @@
+
 import React, { useState } from "react";
 import { TrendingCard, TrendingItem } from "./TrendingCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Scroll, AlertCircle } from "lucide-react";
+import { RefreshCw, Scroll, AlertCircle, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,14 +125,14 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
     <section className="mb-12 animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-serif font-semibold">Current Scrolls</h2>
-          <Scroll className="w-5 h-5 text-primary" />
+          <h2 className="text-2xl font-serif font-semibold bg-gradient-to-r from-[#d4af37] to-purple-400 bg-clip-text text-transparent">Current Scrolls</h2>
+          <BookOpen className="w-5 h-5 text-purple-400" />
         </div>
         
         <Button 
           variant="outline"
           size="sm" 
-          className="gap-2 bg-[#8e24aa] hover:bg-[#7b1fa2] text-white border-none"
+          className="gap-2 bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white border-none shadow-md hover:shadow-lg transition-all"
           onClick={handleRefresh}
           disabled={isLoading || isRefetching}
         >
@@ -145,12 +146,16 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
       
       {/* Category filters - only show if we have items */}
       {trendingItems.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-6">
           {categories.map((category) => (
             <Badge 
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
-              className="cursor-pointer font-serif"
+              className={`cursor-pointer font-serif transition-all ${
+                selectedCategory === category 
+                  ? "bg-purple-600 hover:bg-purple-700" 
+                  : "border-purple-300 text-purple-300 hover:bg-purple-100/10"
+              }`}
               onClick={() => setSelectedCategory(category === 'All' ? null : category)}
             >
               {category}
@@ -168,25 +173,27 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
             variant="outline" 
             size="sm"
             onClick={handleRefresh}
+            className="border-purple-300 text-purple-300 hover:bg-purple-100/10 hover:text-purple-200"
           >
             Try Again
           </Button>
         </div>
       ) : isLoading && !trendingItems.length ? (
-        <div className="p-10 bg-card/40 backdrop-blur-sm border border-primary/20 rounded-lg flex flex-col items-center justify-center text-center">
-          <RefreshCw className="h-10 w-10 text-primary/70 animate-spin mb-3" />
+        <div className="p-10 bg-card/40 backdrop-blur-sm border border-purple-500/20 rounded-lg flex flex-col items-center justify-center text-center">
+          <RefreshCw className="h-10 w-10 text-purple-400 animate-spin mb-3" />
           <h3 className="text-lg font-serif mb-1">Unfurling scrolls</h3>
           <p className="text-sm text-muted-foreground">Our librarians are collecting the latest literary news...</p>
         </div>
       ) : trendingItems.length === 0 ? (
-        <div className="p-8 bg-card/40 backdrop-blur-sm border border-primary/20 rounded-lg flex flex-col items-center justify-center text-center">
-          <Scroll className="h-10 w-10 text-primary/70 mb-3" />
+        <div className="p-8 bg-card/40 backdrop-blur-sm border border-purple-500/20 rounded-lg flex flex-col items-center justify-center text-center">
+          <Scroll className="h-10 w-10 text-purple-400 mb-3" />
           <h3 className="text-lg font-serif mb-1">No scrolls available</h3>
           <p className="text-sm text-muted-foreground mb-4">Try updating or changing your search terms.</p>
           <Button 
             variant="outline" 
             size="sm"
             onClick={handleRefresh}
+            className="border-purple-300 text-purple-300 hover:bg-purple-100/10 hover:text-purple-200"
           >
             Update Scrolls
           </Button>
@@ -196,7 +203,7 @@ export function TrendingSection({ searchHistory = [] }: TrendingSectionProps) {
           {filteredItems?.length > 0 && filteredItems.map((item, index) => (
             <div 
               key={item.id} 
-              className="rounded-lg overflow-hidden shadow-lg animate-slide-up transition-all hover:shadow-xl"
+              className="rounded-lg overflow-hidden border border-purple-500/10 bg-black/20 backdrop-blur-sm shadow-lg animate-slide-up transition-all hover:shadow-xl hover:border-purple-500/30"
               style={{ animationDelay: `${0.1 * (index % 6)}s` }}
             >
               <TrendingCard 
